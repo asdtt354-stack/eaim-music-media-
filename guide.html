@@ -271,21 +271,6 @@ footer{
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:var(--dark)}
 ::-webkit-scrollbar-thumb{background:#2a1a3a;border-radius:2px}
-
-  .launch-btn {
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 10px 22px; border-radius: 30px; cursor: pointer;
-    font-size: .85rem; font-weight: 700; text-decoration: none;
-    border: none; font-family: inherit; transition: all .25s;
-    margin-top: 14px;
-  }
-  .launch-btn:hover { transform: translateY(-2px); }
-  .launch-btn-gold { background: rgba(212,168,67,0.15); color: #d4a843; border: 1px solid rgba(212,168,67,0.35); }
-  .launch-btn-gold:hover { background: rgba(212,168,67,0.25); box-shadow: 0 4px 16px rgba(212,168,67,0.2); }
-  .launch-btn-blue { background: rgba(93,173,226,0.15); color: #5DADE2; border: 1px solid rgba(93,173,226,0.35); }
-  .launch-btn-blue:hover { background: rgba(93,173,226,0.25); box-shadow: 0 4px 16px rgba(93,173,226,0.2); }
-  .launch-btn-green { background: rgba(105,240,174,0.12); color: #69f0ae; border: 1px solid rgba(105,240,174,0.3); }
-  .launch-btn-green:hover { background: rgba(105,240,174,0.2); box-shadow: 0 4px 16px rgba(105,240,174,0.15); }
 </style>
 </head>
 <body>
@@ -315,7 +300,8 @@ footer{
 
 <!-- 목차 -->
 <nav class="toc">
-  <a class="toc-btn" href="#overview">전체 흐름</a>
+  <a class="toc-btn" href="index.html" style="border-color:rgba(212,168,67,0.4);color:var(--gold2)">🏠 허브</a>
+    <a class="toc-btn" href="#overview">전체 흐름</a>
   <a class="toc-btn" href="#maker">뮤지컬 메이커</a>
   <a class="toc-btn" href="#slideshow">슬라이드쇼</a>
   <a class="toc-btn" href="#mixer">오디오 믹서</a>
@@ -332,6 +318,9 @@ footer{
       <div>
         <div class="app-name">전체 작업 흐름</div>
         <div class="app-desc">세 앱이 하나로 연결되어 뮤지컬 수업의 기획부터 공연까지 완성합니다.</div>
+        <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+          <a href="index.html" target="_blank" class="launch-btn launch-btn-gold" style="font-size:.78rem;">🏠 허브로 이동 →</a>
+        </div>
       </div>
     </div>
 
@@ -382,7 +371,6 @@ footer{
         <div class="app-name" style="color:var(--gold2)">뮤지컬 메이커</div>
         <div class="app-name-ko">Musical Maker</div>
         <div class="app-desc">주제와 등장인물만 입력하면 Gemini AI가 대본·가사·Suno 프롬프트·배경 프롬프트를 자동으로 생성합니다.</div>
-        <a href="maker.html" target="_blank" class="launch-btn launch-btn-gold">🎭 뮤지컬 메이커 열기 →</a>
       </div>
     </div>
 
@@ -395,7 +383,7 @@ footer{
           <div class="step-title">Gemini API 키 입력
             <span class="badge" style="background:rgba(212,168,67,.15);color:var(--gold)">필수</span>
           </div>
-          <div class="step-desc">우측 상단 API 키 입력창에 Gemini API 키를 붙여넣고 저장 체크박스를 켜두세요. 다음에 자동 입력됩니다.</div>
+          <div class="step-desc">선생님으로 입장 → 설정 탭에서 Gemini API 키를 입력하세요. 학생들은 API 키 없이 바로 사용할 수 있어요.</div>
           <div class="step-tip">&#128273; 키 발급: <strong>aistudio.google.com</strong> → Get API key → Create API key (무료)</div>
         </div>
       </div>
@@ -404,7 +392,7 @@ footer{
         <div class="step-num" style="background:rgba(212,168,67,.12);color:var(--gold)">02</div>
         <div class="step-body">
           <div class="step-title">주제와 기본 정보 입력</div>
-          <div class="step-desc">주제는 짧게도 길게도 괜찮아요. 장르(학교생활, 판타지, 우정·성장 등), 막 수(2~5막), 등장인물을 설정합니다.</div>
+          <div class="step-desc">주제는 짧게도 길게도 괜찮아요. 배경 장르(학교/가정/자연 등)와 분위기 장르(판타지/우정/코미디 등)를 순서대로 선택하고, 등장인물 수(2~20명)와 막 수(2~5막)를 설정합니다.</div>
           <div class="step-tip">
             <strong>주제 예시:</strong><br>
             · 짧게: "우정" "환경" "성장"<br>
@@ -467,7 +455,6 @@ footer{
         <div class="app-name" style="color:var(--blue)">슬라이드쇼</div>
         <div class="app-name-ko">Slideshow Player</div>
         <div class="app-desc">AI 배경 이미지 위에 가사가 표시되고, 커튼콜·크레딧 롤까지 자동 재생되는 공연 영상 플레이어입니다.</div>
-        <a href="slideshow.html" target="_blank" class="launch-btn launch-btn-blue">🎬 슬라이드쇼 열기 →</a>
       </div>
     </div>
 
@@ -560,7 +547,6 @@ footer{
         <div class="app-name" style="color:var(--green)">오디오 믹서</div>
         <div class="app-name-ko">Audio Mixer</div>
         <div class="app-desc">BGM·MR·앰비언스 3채널 실시간 믹싱과 AI 자동 음향 프리셋으로 공연 현장의 음향을 완성합니다.</div>
-        <a href="audio-mixer.html" target="_blank" class="launch-btn launch-btn-green">🎵 오디오 믹서 열기 →</a>
       </div>
     </div>
 

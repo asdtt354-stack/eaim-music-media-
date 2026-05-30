@@ -230,11 +230,17 @@ function render() {
 // ══════════════════════════
 // 로그인
 // ══════════════════════════
-function renderLogin(tab='teacher') {
+function renderLogin(tab=null) {
+  // URL/storage role 기반 기본 탭 결정
+  if (!tab) {
+    const role = new URLSearchParams(window.location.search).get('role') || localStorage.getItem('mm_entry_role');
+    tab = (role === 'student') ? 'student' : 'teacher';
+  }
   const pwSet = !!LS.get(TEACHER_PW);
   root.innerHTML = `
   <div class="login-wrap fade-in">
     <div class="login-box">
+      <a href="index.html" style="display:block;text-align:center;font-size:.7rem;color:rgba(255,255,255,.25);margin-bottom:16px;text-decoration:none;">← 허브로 돌아가기</a>
       <div class="login-logo">🎭 EAIM</div>
       <div class="login-sub">MUSICAL MAKER</div>
       <div class="login-tabs">
@@ -286,7 +292,10 @@ function renderTeacher() {
   root.innerHTML = `
   <div class="app-header">
     <div class="header-inner">
-      <div class="logo-t">🎭 뮤지컬메이커</div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="index.html" style="font-size:.7rem;color:rgba(255,255,255,.25);text-decoration:none;padding:4px 8px;border:1px solid rgba(255,255,255,.1);border-radius:6px;">🏠 허브</a>
+        <div class="logo-t">🎭 Musical Maker</div>
+      </div>
       <div class="header-right">
         <span class="mode-badge badge-teacher">TEACHER</span>
         <button class="logout-btn" onclick="logout()">로그아웃</button>
@@ -828,7 +837,28 @@ function logout() {
 }
 
 // ── 시작 ──
-render();
+// URL 파라미터로 role 처리
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const role = params.get('role') || localStorage.getItem('mm_entry_role') || null;
+  if (role === 'teacher') {
+    // 이미 로그인된 경우 바로 대시보드
+    if (LS.get(SESSION) === 'teacher') { render(); return; }
+    // 아니면 선생님 탭으로 로그인
+    session = null;
+    render();
+    return;
+  }
+  if (role === 'student') {
+    // 수업 ON 확인
+    classOn = LS.get(CLASS_ON, false);
+    if (LS.get(SESSION) === 'student') { render(); return; }
+    session = null;
+    render();
+    return;
+  }
+  render();
+})();
 </script>
 </body>
 </html>

@@ -137,6 +137,22 @@ main{max-width:960px;margin:0 auto;padding:48px 24px 80px;}
 
 .fade-in{animation:fadeIn .5s ease-out;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+  .enter-btn {
+    flex:1; padding:10px 8px; border-radius:10px; text-align:center;
+    font-size:.82rem; font-weight:700; text-decoration:none;
+    transition:all .2s; cursor:pointer;
+  }
+  .btn-teacher {
+    background:rgba(212,168,67,0.15); color:var(--gold);
+    border:1px solid rgba(212,168,67,0.35);
+  }
+  .btn-teacher:hover { background:rgba(212,168,67,0.28); transform:translateY(-1px); }
+  .btn-student {
+    background:rgba(82,194,122,0.12); color:#86efac;
+    border:1px solid rgba(82,194,122,0.3);
+  }
+  .btn-student:hover { background:rgba(82,194,122,0.22); transform:translateY(-1px); }
 </style>
 </head>
 <body>
@@ -183,13 +199,16 @@ main{max-width:960px;margin:0 auto;padding:48px 24px 80px;}
   <div class="app-grid">
 
     <!-- Musical Maker -->
-    <a href="maker.html" class="app-card card-maker">
+    <div class="app-card card-maker" style="cursor:default;">
       <div class="card-icon icon-maker">🎭</div>
       <div class="card-name name-maker">Musical Maker</div>
       <div class="card-name-ko">뮤지컬 메이커</div>
       <div class="card-desc">주제와 장르만 입력하면 AI가 대본·가사·Suno 프롬프트·배경 프롬프트를 자동 생성해요.</div>
-      <div class="card-arrow">→</div>
-    </a>
+      <div style="display:flex;gap:10px;margin-top:18px;">
+        <a href="maker.html?role=teacher" class="enter-btn btn-teacher" onclick="setRole('teacher')">🎓 선생님 입장</a>
+        <a href="maker.html?role=student" class="enter-btn btn-student" onclick="setRole('student')">🎒 학생 입장</a>
+      </div>
+    </div>
 
     <!-- Slideshow -->
     <a href="slideshow.html" class="app-card card-slide">
@@ -224,5 +243,11 @@ main{max-width:960px;margin:0 auto;padding:48px 24px 80px;}
 
 </main>
 
+
+<script>
+function setRole(role) {
+  localStorage.setItem('mm_entry_role', role);
+}
+</script>
 </body>
 </html>
