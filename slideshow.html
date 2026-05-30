@@ -268,10 +268,166 @@ body {
 .api-status.gemini { border-color: rgba(93,173,226,0.4); color: #5DADE2; }
 .api-status.pollinations { border-color: rgba(105,240,174,0.3); color: #69f0ae; }
 
-/* ── 애니메이션 ── */
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
-@keyframes twinkle { from{opacity:0.2} to{opacity:0.8} }
+/* ── 암전 (막 전환) ── */
+#blackout {
+  position: fixed; inset: 0; z-index: 500;
+  background: #000;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.5s ease;
+}
+#blackout.fade-in  { opacity: 1; pointer-events: auto; }
+#blackout.fade-out { opacity: 0; pointer-events: none; }
+
+/* 막 전환 텍스트 */
+#blackout-text {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(255,255,255,0.15);
+  font-size: clamp(12px, 2vw, 18px);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  font-family: 'Segoe UI', serif;
+}
+
+/* ── 넘버 가사 자막 (하단) ── */
+.number-lyrics-bar {
+  position: absolute;
+  bottom: 52px; left: 50%;
+  transform: translateX(-50%);
+  width: 90%; max-width: 800px;
+  z-index: 25; text-align: center;
+  pointer-events: none;
+}
+.number-lyrics-title {
+  font-size: clamp(10px, 1.4vw, 13px);
+  color: rgba(255,255,255,0.5);
+  letter-spacing: 3px; margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.number-lyrics-line {
+  background: rgba(0,0,0,0.72);
+  backdrop-filter: blur(4px);
+  border-radius: 8px; padding: 10px 24px;
+  font-size: clamp(15px, 2.4vw, 22px);
+  font-weight: 700; color: #fff;
+  line-height: 1.5; letter-spacing: 0.5px;
+  border: 1px solid rgba(255,255,255,0.1);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  min-height: 48px;
+  transition: opacity 0.4s ease;
+}
+.number-lyrics-line .current-line {
+  color: #FFD700;
+  text-shadow: 0 0 20px rgba(255,215,0,0.4), 0 2px 8px rgba(0,0,0,0.8);
+}
+.number-lyrics-line .next-line {
+  font-size: 0.75em;
+  color: rgba(255,255,255,0.45);
+  margin-top: 4px;
+}
+/* 가사 토글 버튼 */
+.lyrics-toggle-btn {
+  position: absolute; bottom: 52px; right: 16px;
+  z-index: 26; background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.6); border-radius: 6px;
+  padding: 4px 10px; font-size: 11px; cursor: pointer;
+  font-family: inherit;
+}
+.speech-bubble {
+  position: absolute;
+  background: rgba(255,255,255,0.95);
+  color: #1a1a1a; border-radius: 18px;
+  padding: 10px 16px;
+  font-size: clamp(12px, 1.8vw, 16px);
+  font-weight: 600; line-height: 1.5;
+  max-width: 220px; word-break: keep-all;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  z-index: 30; cursor: move; user-select: none;
+  animation: bubblePop 0.3s ease;
+  border: 2px solid rgba(0,0,0,0.06);
+}
+.speech-bubble::after {
+  content: ''; position: absolute;
+  bottom: -12px; left: 24px;
+  border: 7px solid transparent;
+  border-top-color: rgba(255,255,255,0.95);
+  border-bottom: none;
+}
+.speech-bubble.tail-right::after { left:auto; right:24px; }
+.speech-bubble.tail-top::after {
+  bottom:auto; top:-12px;
+  border-top:none;
+  border-bottom:7px solid rgba(255,255,255,0.95);
+}
+.bubble-name {
+  font-size: 10px; color: #888;
+  margin-bottom: 3px; font-weight: 700; letter-spacing: 0.5px;
+}
+.bubble-del {
+  position: absolute; top: -8px; right: -8px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #ff5252; color: #fff;
+  font-size: 11px; border: none; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  z-index: 31; line-height: 1;
+}
+.speech-bubble:hover .bubble-del { display: flex; }
+
+/* 말풍선 컨트롤 패널 */
+#bubble-panel {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.78); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 40px; padding: 7px 14px;
+  display: none; align-items: center; gap: 7px;
+  z-index: 200; flex-wrap: wrap; justify-content: center;
+}
+#bubble-panel.show { display: flex; }
+#bubble-text-input {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #fff; padding: 6px 12px; border-radius: 20px;
+  font-size: 13px; outline: none; width: 150px; font-family: inherit;
+}
+#bubble-text-input::placeholder { color: rgba(255,255,255,0.35); }
+#bubble-name-input {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #fff; padding: 6px 10px; border-radius: 20px;
+  font-size: 12px; outline: none; width: 90px; font-family: inherit;
+}
+#bubble-name-input::placeholder { color: rgba(255,255,255,0.3); }
+.bubble-ctrl-btn {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff; padding: 6px 12px; border-radius: 20px;
+  font-size: 12px; cursor: pointer; white-space: nowrap; font-family: inherit;
+}
+.bubble-ctrl-btn:hover { background: rgba(255,255,255,0.22); }
+.bubble-ctrl-btn.on { background: rgba(93,173,226,0.35); border-color: #5DADE2; color: #5DADE2; }
+select.bubble-ctrl-btn { padding: 5px 8px; }
+
+/* ── 자막 바 ── */
+#subtitle-bar {
+  position: absolute; bottom: 56px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.78);
+  color: #fff; padding: 10px 28px; border-radius: 8px;
+  font-size: clamp(14px, 2.2vw, 20px); font-weight: 600;
+  text-align: center; max-width: 80%; z-index: 30;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  display: none; letter-spacing: 0.5px;
+  border: 1px solid rgba(255,255,255,0.12);
+  cursor: pointer;
+}
+
+@keyframes bubblePop {
+  0%   { transform: scale(0.5); opacity:0; }
+  70%  { transform: scale(1.08); }
+  100% { transform: scale(1); opacity:1; }
+}
 </style>
 </head>
 <body>
@@ -308,6 +464,27 @@ body {
 <!-- API 상태 뱃지 -->
 <div class="api-status" id="api-status" onclick="resetApiKey()" title="클릭하여 키 변경"></div>
 
+<!-- 암전 오버레이 -->
+<div id="blackout"><div id="blackout-text"></div></div>
+
+<!-- 말풍선 컨트롤 패널 -->
+<div id="bubble-panel">
+  <input id="bubble-name-input" placeholder="이름" maxlength="10">
+  <input id="bubble-text-input" placeholder="대사 입력..." maxlength="40">
+  <select class="bubble-ctrl-btn" id="bubble-tail">
+    <option value="tail-left">꼬리 ↙</option>
+    <option value="tail-right">꼬리 ↘</option>
+    <option value="tail-top">꼬리 ↑</option>
+  </select>
+  <button class="bubble-ctrl-btn" onclick="addBubble()">💬 추가</button>
+  <button class="bubble-ctrl-btn" onclick="clearBubbles()">🗑 전체삭제</button>
+  <button class="bubble-ctrl-btn" id="subtitle-toggle" onclick="toggleSubtitleEdit()">📝 자막</button>
+  <button class="bubble-ctrl-btn" onclick="toggleBubblePanel()" style="color:rgba(255,255,255,0.4)">✕</button>
+</div>
+
+<!-- 자막 바 -->
+<div id="subtitle-bar" onclick="editSubtitle()">자막을 클릭하여 편집</div>
+
 <div id="stage"></div>
 <div id="controls" style="display:none">
   <button class="ctrl-btn" id="btn-exit" title="나가기">✕</button>
@@ -315,6 +492,7 @@ body {
   <div class="dot-nav" id="dot-nav"></div>
   <button class="ctrl-btn" id="btn-next">▶</button>
   <button class="ctrl-btn" id="btn-auto" title="자동재생">⏵</button>
+  <button class="ctrl-btn" id="btn-bubble" onclick="toggleBubblePanel()" title="말풍선/자막">💬</button>
 </div>
 <div id="key-hint">← → 키보드 | ESC 종료</div>
 <button id="back-btn" onclick="goBack()">↩ 처음으로</button>
@@ -579,7 +757,7 @@ function buildScene(scene, idx) {
       </div>
     </div>
 
-    <!-- 우측 가사 -->
+    <!-- 우측 가사 (이탤릭 패널) -->
     ${lyricLines.length ? `
       <div class="lyrics-panel hidden" id="lp-${idx}">
         <div class="lyrics-label" style="color:${C.lyric}">✦ LYRICS ✦</div>
@@ -588,6 +766,19 @@ function buildScene(scene, idx) {
           ${lyricLines.map((l,i)=>`<div class="lyric-line" id="ll-${idx}-${i}" style="color:${C.lyric};opacity:0;transition:opacity 0.5s ease ${0.5+i*0.25}s">${l}</div>`).join('')}
         </div>
       </div>` : ''}
+
+    <!-- 하단 넘버 가사 자막 -->
+    ${lyricLines.length ? `
+      <div class="number-lyrics-bar" id="nlb-${idx}">
+        ${scene.songTitle ? `<div class="number-lyrics-title">♪ ${scene.songTitle}</div>` : ''}
+        <div class="number-lyrics-line" id="nlb-line-${idx}">
+          <div class="current-line" id="nlb-cur-${idx}">${lyricLines[0] || ''}</div>
+          ${lyricLines[1] ? `<div class="next-line" id="nlb-next-${idx}">${lyricLines[1]}</div>` : `<div class="next-line" id="nlb-next-${idx}"></div>`}
+        </div>
+      </div>
+      <button class="lyrics-toggle-btn" id="lyr-toggle-${idx}"
+        onclick="toggleLyricsBar(${idx})">가사 숨기기</button>
+    ` : ''}
 
     <!-- 진행 바 -->
     <div class="progress-bar">
@@ -658,6 +849,27 @@ function buildEnding() {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// 암전 (막 전환)
+// ──────────────────────────────────────────────────────────────────────────────
+let isTransitioning = false;
+
+function blackout(text, callback) {
+  const bl = document.getElementById('blackout');
+  const bt = document.getElementById('blackout-text');
+  bt.textContent = text || '';
+  bl.classList.add('fade-in');
+  bl.classList.remove('fade-out');
+  setTimeout(() => {
+    callback();
+    setTimeout(() => {
+      bl.classList.remove('fade-in');
+      bl.classList.add('fade-out');
+      setTimeout(() => { isTransitioning = false; }, 500);
+    }, 300);
+  }, 500);
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // 슬라이드 전환
 // ──────────────────────────────────────────────────────────────────────────────
 function getSlideEl(idx) {
@@ -667,6 +879,24 @@ function getSlideEl(idx) {
 }
 
 function showSlide(idx) {
+  if (isTransitioning) return;
+
+  // 장면 → 장면 전환만 암전 (커버→장면1, 장면→엔딩도 포함)
+  const needsBlackout = (current !== idx) && !(current === 0 && idx === 0);
+
+  if (needsBlackout) {
+    isTransitioning = true;
+    // 암전 텍스트: 장면 번호 표시
+    const label = idx === TOTAL + 1 ? '막 내림' :
+                  idx === 0 ? '' :
+                  `Scene ${String(idx).padStart(2,'0')}`;
+    blackout(label, () => doShowSlide(idx));
+  } else {
+    doShowSlide(idx);
+  }
+}
+
+function doShowSlide(idx) {
   // 현재 숨기기
   const old = getSlideEl(current);
   if (old) old.className = old.className.replace('visible','hidden');
@@ -679,12 +909,13 @@ function showSlide(idx) {
   // 장면 콘텐츠 애니메이션
   if (idx >= 1 && idx <= TOTAL) {
     const sceneIdx = idx - 1;
+    // 가사 줄 초기화
+    initLyricBar(sceneIdx);
     setTimeout(() => {
       const mc = document.getElementById(`mc-${sceneIdx}`);
       const lp = document.getElementById(`lp-${sceneIdx}`);
       if (mc) { mc.classList.remove('hidden'); mc.classList.add('visible'); }
       if (lp) { lp.classList.remove('hidden'); lp.classList.add('visible'); }
-      // 가사 줄 페이드인
       const scene = SCENES[sceneIdx];
       const lines = (scene.lyrics || '').split('\n').filter(Boolean);
       lines.forEach((_,i) => {
@@ -804,6 +1035,220 @@ document.getElementById('btn-auto').onclick  = toggleAuto;
 document.getElementById('btn-exit').onclick  = goBack;
 
 // ──────────────────────────────────────────────────────────────────────────────
+// 넘버 가사 자막 — 줄 넘기기
+// ──────────────────────────────────────────────────────────────────────────────
+const lyricLineState = {}; // sceneIdx → 현재 줄 번호
+
+function initLyricBar(sceneIdx) {
+  lyricLineState[sceneIdx] = 0;
+  updateLyricBar(sceneIdx);
+}
+
+function nextLyricLine(sceneIdx) {
+  const scene = SCENES[sceneIdx];
+  if (!scene) return;
+  const lines = (scene.lyrics || '').split('\n').filter(Boolean);
+  if (!lines.length) return;
+  const cur = (lyricLineState[sceneIdx] || 0);
+  if (cur < lines.length - 1) {
+    lyricLineState[sceneIdx] = cur + 1;
+    updateLyricBar(sceneIdx);
+  }
+}
+
+function prevLyricLine(sceneIdx) {
+  const cur = (lyricLineState[sceneIdx] || 0);
+  if (cur > 0) {
+    lyricLineState[sceneIdx] = cur - 1;
+    updateLyricBar(sceneIdx);
+  }
+}
+
+function updateLyricBar(sceneIdx) {
+  const scene = SCENES[sceneIdx];
+  if (!scene) return;
+  const lines = (scene.lyrics || '').split('\n').filter(Boolean);
+  const cur   = lyricLineState[sceneIdx] || 0;
+  const curEl  = document.getElementById(`nlb-cur-${sceneIdx}`);
+  const nextEl = document.getElementById(`nlb-next-${sceneIdx}`);
+  if (curEl)  curEl.textContent  = lines[cur]  || '';
+  if (nextEl) nextEl.textContent = lines[cur + 1] || '';
+}
+
+function toggleLyricsBar(sceneIdx) {
+  const bar = document.getElementById(`nlb-${sceneIdx}`);
+  const btn = document.getElementById(`lyr-toggle-${sceneIdx}`);
+  if (!bar) return;
+  const hidden = bar.style.display === 'none';
+  bar.style.display  = hidden ? 'block' : 'none';
+  btn.textContent    = hidden ? '가사 숨기기' : '가사 보기';
+}
+
+// 키보드로 가사 줄 넘기기 — W/S 또는 위/아래 방향키
+document.addEventListener('keydown', e => {
+  if (e.target.id === 'bubble-text-input') return;
+  const sceneIdx = current - 1;
+  if (sceneIdx < 0 || sceneIdx >= TOTAL) return;
+  if (e.key === 'ArrowUp'   || e.key === 'w' || e.key === 'W') {
+    e.preventDefault(); prevLyricLine(sceneIdx);
+  }
+  if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+    e.preventDefault(); nextLyricLine(sceneIdx);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 말풍선 & 자막 기능
+// ──────────────────────────────────────────────────────────────────────────────
+let bubblePanelOpen = false;
+
+function toggleBubblePanel() {
+  bubblePanelOpen = !bubblePanelOpen;
+  const panel = document.getElementById('bubble-panel');
+  const btn   = document.getElementById('btn-bubble');
+  panel.classList.toggle('show', bubblePanelOpen);
+  btn.style.color = bubblePanelOpen ? '#5DADE2' : 'rgba(255,255,255,0.8)';
+}
+
+// 현재 슬라이드 el 가져오기
+function getCurrentSlideEl() {
+  if (current === 0) return document.getElementById('cover-slide');
+  if (current === TOTAL + 1) return document.getElementById('end-slide');
+  return document.getElementById(`scene-slide-${current - 1}`);
+}
+
+// 말풍선 추가
+function addBubble() {
+  const text = document.getElementById('bubble-text-input').value.trim();
+  if (!text) { document.getElementById('bubble-text-input').focus(); return; }
+  const name     = document.getElementById('bubble-name-input').value.trim();
+  const tailType = document.getElementById('bubble-tail').value;
+  const slide    = getCurrentSlideEl();
+  if (!slide) return;
+
+  const bubble = document.createElement('div');
+  bubble.className = `speech-bubble ${tailType}`;
+  // 기본 위치 — 중앙 하단부
+  bubble.style.left = '30%';
+  bubble.style.top  = '55%';
+
+  bubble.innerHTML = `
+    ${name ? `<div class="bubble-name">${name}</div>` : ''}
+    <span class="bubble-text">${text}</span>
+    <button class="bubble-del" onclick="this.parentElement.remove()">✕</button>
+  `;
+
+  // 드래그 이동
+  makeDraggable(bubble);
+  slide.appendChild(bubble);
+
+  // 입력 초기화
+  document.getElementById('bubble-text-input').value = '';
+  document.getElementById('bubble-text-input').focus();
+}
+
+// 드래그 기능
+function makeDraggable(el) {
+  let startX, startY, startL, startT;
+  el.addEventListener('mousedown', e => {
+    if (e.target.classList.contains('bubble-del')) return;
+    e.preventDefault();
+    const rect = el.getBoundingClientRect();
+    const pRect = el.parentElement.getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    startL = rect.left - pRect.left;
+    startT = rect.top  - pRect.top;
+    const onMove = mv => {
+      const dx = mv.clientX - startX;
+      const dy = mv.clientY - startY;
+      el.style.left = (startL + dx) + 'px';
+      el.style.top  = (startT + dy) + 'px';
+    };
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  // 터치 지원
+  el.addEventListener('touchstart', e => {
+    if (e.target.classList.contains('bubble-del')) return;
+    const t = e.touches[0];
+    const rect = el.getBoundingClientRect();
+    const pRect = el.parentElement.getBoundingClientRect();
+    startX = t.clientX; startY = t.clientY;
+    startL = rect.left - pRect.left;
+    startT = rect.top  - pRect.top;
+    const onMove = mv => {
+      const tc = mv.touches[0];
+      el.style.left = (startL + tc.clientX - startX) + 'px';
+      el.style.top  = (startT + tc.clientY - startY) + 'px';
+    };
+    const onEnd = () => {
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+    };
+    el.addEventListener('touchmove', onMove);
+    el.addEventListener('touchend', onEnd);
+  }, {passive:true});
+}
+
+// 현재 장면 말풍선 전체 삭제
+function clearBubbles() {
+  const slide = getCurrentSlideEl();
+  if (!slide) return;
+  slide.querySelectorAll('.speech-bubble').forEach(b => b.remove());
+}
+
+// ── 자막 ──
+let subtitleVisible = false;
+
+function toggleSubtitleEdit() {
+  const bar = document.getElementById('subtitle-bar');
+  subtitleVisible = !subtitleVisible;
+  if (subtitleVisible) {
+    bar.style.display = 'block';
+    const slide = getCurrentSlideEl();
+    if (slide) slide.appendChild(bar);
+    editSubtitle();
+  } else {
+    bar.style.display = 'none';
+  }
+  document.getElementById('subtitle-toggle').classList.toggle('on', subtitleVisible);
+}
+
+function editSubtitle() {
+  const bar = document.getElementById('subtitle-bar');
+  const cur = bar.dataset.text || '';
+  const text = prompt('자막 입력 (빈칸이면 숨김):', cur);
+  if (text === null) return;
+  if (!text.trim()) {
+    bar.style.display = 'none';
+    subtitleVisible = false;
+    document.getElementById('subtitle-toggle').classList.remove('on');
+    return;
+  }
+  bar.dataset.text = text.trim();
+  bar.textContent  = text.trim();
+  bar.style.display = 'block';
+  subtitleVisible = true;
+  // 현재 슬라이드에 붙이기
+  const slide = getCurrentSlideEl();
+  if (slide && !slide.contains(bar)) slide.appendChild(bar);
+}
+
+// 슬라이드 전환 시 말풍선/자막 패널 위치 이동
+function moveBubblePanel() {
+  const bar = document.getElementById('subtitle-bar');
+  if (subtitleVisible) {
+    const slide = getCurrentSlideEl();
+    if (slide && !slide.contains(bar)) slide.appendChild(bar);
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // 초기화 — API 키 확인 후 호출
 // ──────────────────────────────────────────────────────────────────────────────
 function initSlideshow() {
@@ -819,6 +1264,13 @@ function initSlideshow() {
     }
   })();
 }
+
+// 키보드 Enter로 말풍선 빠르게 추가
+document.addEventListener('keydown', e => {
+  if (e.target.id === 'bubble-text-input' && e.key === 'Enter') {
+    addBubble();
+  }
+});
 
 // ── 페이지 로드 — 저장된 키 확인 ──
 window.addEventListener('load', () => {

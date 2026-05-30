@@ -772,17 +772,41 @@ function formatTime(s) {
 // 효과음 패드
 // ══════════════════════════════════════════════════════════════════════════════
 const SFX_DEFAULTS = [
-  { name:'박수',     emoji:'👏', color:'#4fc3f7', key:'1' },
-  { name:'천둥',     emoji:'⛈',  color:'#ce93d8', key:'2' },
-  { name:'바람',     emoji:'🌬',  color:'#80cbc4', key:'3' },
-  { name:'종소리',   emoji:'🔔', color:'#f5c842', key:'4' },
-  { name:'환호성',   emoji:'📣', color:'#69f0ae', key:'5' },
-  { name:'문소리',   emoji:'🚪', color:'#ff8a65', key:'6' },
-  { name:'비소리',   emoji:'🌧',  color:'#90caf9', key:'7' },
-  { name:'조명',     emoji:'💡', color:'#ffe082', key:'8' },
+  { name:'박수',   emoji:'👏', color:'#4fc3f7', key:'1',
+    url:'https://cdn.pixabay.com/audio/2022/03/15/audio_1a13b0ff8b.mp3' },
+  { name:'천둥',   emoji:'⛈',  color:'#ce93d8', key:'2',
+    url:'https://cdn.pixabay.com/audio/2022/03/10/audio_270f861e91.mp3' },
+  { name:'바람',   emoji:'🌬',  color:'#80cbc4', key:'3',
+    url:'https://cdn.pixabay.com/audio/2022/01/18/audio_d1718ab374.mp3' },
+  { name:'종소리', emoji:'🔔', color:'#f5c842', key:'4',
+    url:'https://cdn.pixabay.com/audio/2021/08/04/audio_0625f624a7.mp3' },
+  { name:'환호성', emoji:'📣', color:'#69f0ae', key:'5',
+    url:'https://cdn.pixabay.com/audio/2022/03/15/audio_1a13b0ff8b.mp3' },
+  { name:'문소리', emoji:'🚪', color:'#ff8a65', key:'6',
+    url:'https://cdn.pixabay.com/audio/2021/08/09/audio_dc39bfc5f2.mp3' },
+  { name:'비소리', emoji:'🌧',  color:'#90caf9', key:'7',
+    url:'https://cdn.pixabay.com/audio/2022/05/13/audio_98971e1af0.mp3' },
+  { name:'조명ON', emoji:'💡', color:'#ffe082', key:'8',
+    url:'https://cdn.pixabay.com/audio/2021/08/04/audio_0625f624a7.mp3' },
 ];
 
 const sfxPads = SFX_DEFAULTS.map((d, i) => ({ ...d, audio: null, id: 'pad' + i }));
+
+// 기본 효과음 자동 로드
+function loadDefaultSfx() {
+  sfxPads.forEach((pad, i) => {
+    if (!pad.url) return;
+    try {
+      const audio = new Audio();
+      audio.crossOrigin = 'anonymous';
+      audio.src = pad.url;
+      audio.preload = 'auto';
+      sfxPads[i].audio = audio;
+    } catch(e) {}
+  });
+  buildSfxPads();
+  toast('🎵 기본 효과음 로드됨 — 파일 업로드로 교체 가능');
+}
 
 function buildSfxPads() {
   const grid = document.getElementById('sfx-grid');
@@ -800,7 +824,9 @@ function buildSfxPads() {
       <div style="font-size:20px;margin-bottom:4px">${pad.emoji}</div>
       <div class="sfx-pad-name">${pad.name}</div>
       <div class="sfx-pad-key">[ ${pad.key} ]</div>
-      ${pad.audio ? `<div style="font-size:8px;color:var(--green);margin-top:3px">●</div>` : ''}
+      <div style="font-size:8px;margin-top:3px;color:${pad.audio ? 'var(--green)' : 'rgba(255,255,255,0.2)'}">
+        ${pad.audio ? '● 로드됨' : '○ 없음'}
+      </div>
     `;
     div.addEventListener('click', (e) => {
       if (e.target.classList.contains('sfx-pad-upload')) return;
@@ -983,7 +1009,7 @@ function toast(msg) {
 // 초기화
 // ══════════════════════════════════════════════════════════════════════════════
 buildMasterVU();
-buildSfxPads();
+loadDefaultSfx();
 animateVU();
 
 // localStorage에서 뮤지컬메이커 데이터 읽어 큐리스트 자동 생성
