@@ -295,6 +295,7 @@ function renderTeacher() {
   </div>
   <div class="tab-bar">
     <button class="tab-btn ${dashTab==='settings'?'on':''}" onclick="setDashTab('settings')">⚙️ 설정</button>
+    <button class="tab-btn ${dashTab==='make'?'on':''}" onclick="setDashTab('make')">🎭 만들기</button>
     <button class="tab-btn ${dashTab==='works'?'on':''}" onclick="setDashTab('works')">
       📋 결과물${works.length?`<span class="badge-count">${works.length}</span>`:''}
     </button>
@@ -310,6 +311,12 @@ function setDashTab(tab) { dashTab = tab; renderTeacher(); }
 function renderDashContent() {
   const el = document.getElementById('dash-content');
   if (!el) return;
+  if (dashTab === 'make') {
+    // 만들기 탭 — 학생 입력 화면을 선생님도 사용
+    el.innerHTML = `<div style="padding-top:4px" id="teacher-make-wrap"></div>`;
+    renderTeacherMake();
+    return;
+  }
   if (dashTab === 'settings') {
     el.innerHTML = `
     <!-- 수업 ON/OFF -->
@@ -823,6 +830,180 @@ function showToast(msg) {
   el.textContent=msg; el.style.display='block';
   clearTimeout(toastT); toastT=setTimeout(()=>{ el.style.display='none'; },2000);
 }
+function renderTeacherMake() {
+  const wrap = document.getElementById('teacher-make-wrap');
+  if (!wrap) return;
+  // 학생 이름을 선생님으로 설정
+  studentName = '선생님';
+  // 학생 입력 UI를 그대로 teacher-make-wrap 안에 렌더
+  wrap.innerHTML = `
+  <div class="card">
+    <div class="card-title">✦ 뮤지컬 만들기</div>
+    <div style="margin-bottom:16px">
+      <div class="edit-label">주제 / 이야기 *</div>
+      <textarea class="edit-box" id="theme" rows="3" placeholder="예: 우정&#10;또는: 전학 온 아이가 음악을 통해 친구들과 하나가 되는 이야기"></textarea>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="edit-label">장르 * — 배경 → 분위기 순서로 선택</div>
+      <div class="genre-step">
+        <div class="genre-step-lbl"><span class="step-badge sb1">1</span>배경 장르</div>
+        <div class="genre-tags">${BG_GENRES.map(g=>`<div class="gtag" onclick="selBg(this,'${g}')">${g}</div>`).join('')}</div>
+      </div>
+      <div class="genre-step" id="mood-step" style="opacity:.35;pointer-events:none">
+        <div class="genre-step-lbl"><span class="step-badge sb2">2</span>분위기 장르</div>
+        <div class="genre-tags">${MOOD_GENRES.map(g=>`<div class="gtag" onclick="selMood(this,'${g}')">${g}</div>`).join('')}</div>
+      </div>
+      <div class="genre-summary" id="genre-sum">
+        <span>✅</span><span id="genre-sum-txt"></span>
+        <button onclick="resetGenre()" style="margin-left:auto;background:none;border:none;color:var(--sub);cursor:pointer;font-size:.72rem">다시선택</button>
+      </div>
+    </div>
+    <div class="row2" style="margin-bottom:16px">
+      <div>
+        <div class="edit-label">등장인물 수 *</div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="counter-wrap">
+            <button class="c-btn" onclick="changeCast(-1)">−</button>
+            <div class="c-val" id="cast-v">${castCount}</div>
+            <button class="c-btn" onclick="changeCast(1)">+</button>
+          </div>
+          <span style="font-size:.8rem;color:var(--sub)">명</span>
+        </div>
+        <div style="font-size:.68rem;color:rgba(255,255,255,.2);margin-top:6px">AI가 이름·역할 자동 창작</div>
+      </div>
+      <div>
+        <div class="edit-label">막 수 *</div>
+        <div class="act-btns">${DURATIONS.map(d=>`<button class="act-btn ${actCount===d.id?'on':''}" onclick="selAct(this,${d.id})">${d.label}</button>`).join('')}</div>
+      </div>
+    </div>
+    <div style="margin-bottom:16px">
+      <div class="edit-label">배경 시간/장소 (선택)</div>
+      <input class="edit-box" type="text" id="setting" placeholder="예: 현대 중학교, 봄학기" style="min-height:auto;resize:none;">
+    </div>
+    <div class="err-msg" id="s-err"></div>
+    <button class="gen-btn" onclick="startGenerateTeacher()">✨ 뮤지컬 전체 생성</button>
+  </div>`;
+}
+
+async function startGenerateTeacher() {
+  // student-main이 없으므로 teacher-make-wrap을 컨테이너로 사용
+  const wrap = document.getElementById('teacher-make-wrap');
+  const theme = document.getElementById('theme')?.value.trim();
+  const setting = document.getElementById('setting')?.value.trim()||'현대';
+  const err = document.getElementById('s-err');
+  if (!theme) { err.textContent='주제를 입력해주세요!'; return; }
+  if (!bgGenre) { err.textContent='배경 장르를 선택해주세요!'; return; }
+  if (!moodGenre) { err.textContent='분위기 장르를 선택해주세요!'; return; }
+  err.textContent='';
+
+  const genre = `${bgGenre} + ${moodGenre}`;
+  wrap.innerHTML = `
+  <div class="prog-card show">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--gold);margin-bottom:4px">🎭 뮤지컬을 만들고 있어요...</div>
+    <div style="font-size:.72rem;color:var(--sub)">잠시만 기다려주세요</div>
+    <div class="prog-steps">
+      <div class="prog-step" id="ps-1"><span class="sicon">🎬</span>제목 & 전체 구성</div>
+      <div class="prog-step" id="ps-2"><span class="sicon">🌅</span>오프닝 코러스</div>
+      <div class="prog-step" id="ps-3"><span class="sicon">🎭</span>각 막 장면</div>
+      <div class="prog-step" id="ps-4"><span class="sicon">🎪</span>커튼콜</div>
+      <div class="prog-step" id="ps-5"><span class="sicon">🎵</span>프롬프트 완성</div>
+    </div>
+    <div id="prog-msg" style="font-size:.72rem;color:var(--sub);margin-top:8px"></div>
+  </div>`;
+
+  const setStep = (n,msg='') => {
+    for(let i=1;i<=5;i++){
+      const el=document.getElementById(`ps-${i}`);
+      if(!el)return;
+      if(i<n){el.className='prog-step done';el.querySelector('.sicon').textContent='✓';}
+      else if(i===n){el.className='prog-step active';}
+      else{el.className='prog-step';}
+    }
+    const pm=document.getElementById('prog-msg');
+    if(pm)pm.textContent=msg;
+  };
+
+  try {
+    setStep(1,'전체 구성 설계 중...');
+    const s1 = await callGemini(`창작 뮤지컬 작가로서 아래 정보로 전체 구조를 설계하세요.
+주제: ${theme} | 장르: ${genre} | 등장인물: ${castCount}명 | 배경: ${setting} | 막 수: ${actCount}
+JSON만 응답:
+{"title":"뮤지컬 제목","characters":["이름(역할)" ${castCount}명 배열],"synopsis":"줄거리 2-3문장","acts":[{"actNum":1,"title":"막제목","summary":"내용 1문장","emotion":"감정"}]}`);
+    const struct = parseJSON(s1);
+    const charsStr = struct.characters.join(', ');
+
+    setStep(2,'오프닝 코러스 작성 중...');
+    const s2 = await callGemini(`뮤지컬 "${struct.title}" 오프닝 코러스.
+줄거리:${struct.synopsis} | 인물:${charsStr} | 장르:${genre}
+JSON만:{"songTitle":"넘버제목","lyrics":"가사 4-6줄(줄바꿈)","sunoPrompt":"영문 Suno 프롬프트(50단어이내)","bgPrompt":"영문 배경이미지 프롬프트(--ar 16:9포함)","mood":"분위기 한국어"}`);
+    const opening = parseJSON(s2);
+
+    setStep(3,'장면 작성 중...');
+    const scenes = [];
+    for(const act of struct.acts){
+      setStep(3,`${act.actNum}막 작성 중...`);
+      const sn = await callGemini(`뮤지컬 "${struct.title}" ${act.actNum}막.
+내용:${act.summary} | 감정:${act.emotion} | 인물:${charsStr}
+JSON만:{"sceneTitle":"${act.title}","songTitle":"넘버제목","lyrics":"가사 4-6줄","characters":"등장인물","sunoPrompt":"영문 Suno(50단어이내)","bgPrompt":"영문 배경이미지(--ar 16:9)","emotion":"${act.emotion}","mood":"분위기 한국어"}`);
+      scenes.push(parseJSON(sn));
+    }
+
+    setStep(4,'커튼콜 작성 중...');
+    const s4 = await callGemini(`뮤지컬 "${struct.title}" 커튼콜.
+오프닝가사:${opening.lyrics} | 줄거리:${struct.synopsis}
+JSON만:{"songTitle":"커튼콜 제목","lyrics":"가사 4-6줄","sunoPrompt":"영문 Suno(50단어이내)","bgPrompt":"영문 배경이미지(--ar 16:9)","mood":"분위기 한국어"}`);
+    const curtain = parseJSON(s4);
+
+    setStep(5,'완성 정리 중...');
+    generatedData = { title:struct.title, genre, characters:struct.characters, synopsis:struct.synopsis, setting, opening, scenes, curtain };
+    LS.set(DRAFT_KEY, generatedData);
+    saveWork(generatedData);
+    await new Promise(r=>setTimeout(r,500));
+
+    // 결과 표시 — teacher-make-wrap 안에
+    renderTeacherResult(wrap);
+
+  } catch(e) {
+    wrap.innerHTML = `
+    <div class="card" style="text-align:center;padding:32px">
+      <div style="font-size:1.2rem;color:#fca5a5;margin-bottom:12px">⚠️ 생성 실패</div>
+      <div style="font-size:.82rem;color:var(--sub);margin-bottom:20px">${e.message}</div>
+      <button class="btn-sec" onclick="setDashTab('make')">← 돌아가기</button>
+    </div>`;
+  }
+}
+
+function renderTeacherResult(container) {
+  if (!generatedData) return;
+  const d = generatedData;
+  container.innerHTML = `
+  <div class="save-bar">
+    <div class="save-status"><div class="save-dot"></div>자동저장 완료</div>
+    <div style="font-size:.68rem;color:var(--sub)">수정하면 자동으로 저장됩니다</div>
+  </div>
+  <div class="r-header">
+    <div style="font-size:.62rem;color:var(--sub);letter-spacing:.25em;margin-bottom:6px">✦ EAIM MUSICAL ✦</div>
+    <div class="r-title">${d.title}</div>
+    <div class="r-sub">${d.genre} · ${actCount}막 · 등장인물 ${castCount}명</div>
+  </div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title" style="margin-bottom:10px">👥 등장인물</div>
+    <div style="font-size:.82rem;color:rgba(255,255,255,.6);line-height:2">${(d.characters||[]).map(c=>`• ${c}`).join('<br>')}</div>
+  </div>
+  ${renderSceneCard('opening','오프닝 코러스','tag-opening','🌅',d.opening,-1)}
+  ${(d.scenes||[]).map((s,i)=>renderSceneCard(`scene-${i}`,`${i+1}막 — ${s.sceneTitle}`,'tag-scene','🎬',s,i)).join('')}
+  ${renderSceneCard('curtain','커튼콜','tag-curtain','🎭',d.curtain,-2)}
+  <div class="btn-row">
+    <button class="btn-sec" onclick="setDashTab('make')">↩ 새로 만들기</button>
+    <button class="btn-dl" onclick="downloadAll()">📥 다운로드</button>
+    <button class="btn-slide" onclick="launchSlideshow()">🎬 슬라이드쇼</button>
+  </div>`;
+
+  container.querySelectorAll('textarea').forEach(el=>{
+    el.addEventListener('input', ()=>scheduleAutoSave());
+  });
+}
+
 function logout() {
   session=null; LS.set(SESSION,null); render();
 }
