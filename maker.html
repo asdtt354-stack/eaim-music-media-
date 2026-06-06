@@ -166,7 +166,7 @@ function renderLogin(tab=null){
   const pwSet=!!LS.get(TEACHER_PW);
   root.innerHTML=`<div class="login-wrap fade-in"><div class="login-box">
     <a href="index.html" style="display:block;text-align:center;font-size:.7rem;color:rgba(255,255,255,.25);margin-bottom:16px;text-decoration:none;">← 허브로 돌아가기</a>
-    <div class="login-logo">🎭 EAIM</div><div class="login-sub">MUSICAL MAKER</div>
+    <div class="login-logo">🎭 EAIM 음악미디어</div><div class="login-sub">음악미디어</div>
     <div class="login-tabs">
       <button class="login-tab ${tab==='teacher'?'on':''}" onclick="renderLogin('teacher')">🎓 선생님</button>
       <button class="login-tab ${tab==='student'?'on':''}" onclick="renderLogin('student')">🎒 학생</button>
@@ -374,19 +374,19 @@ JSON만 응답:
 줄거리:${struct.synopsis} | 인물:${charsStr} | 장르:${genre}
 JSON만:{"songTitle":"넘버제목","lyrics":"가사 4-6줄(줄바꿈)","sunoPrompt":"영문 Suno 프롬프트(50단어이내)","bgPrompt":"영문 배경이미지 프롬프트, 2.5D parallax composition with distinct far background layer(sky/distant scenery), mid layer(buildings/trees/environment), near foreground layer(props/ground details), theatrical stage lighting, --ar 16:9","mood":"분위기 한국어"}`);
     const opening=parseJSON(s2);
-    setStep(3,'장면 작성 중...');      setStep(3,`${act.actNum}막 "${act.title}" 작성 중...`);
-      const sn=await callGemini(`뮤지컬 "${struct.title}" ${act.actNum}막.
-내용:${act.summary} | 감정:${act.emotion} | 인물:${charsStr}
-
+    setStep(3,'장면 작성 중...');
     const scenes=[];
     for(const act of struct.acts){
-JSON만:{"sceneTitle":"${act.title}","songTitle":"넘버제목","lyrics":"가사 4-6줄","characters":"등장인물","sunoPrompt":"영문 Suno(50단어이내)","bgPrompt":"영문 배경이미지(--ar 16:9)","emotion":"${act.emotion}","mood":"분위기 한국어"}`);
+      setStep(3,`${act.actNum}막 "${act.title}" 작성 중...`);
+      const sn=await callGemini(`뮤지컬 "${struct.title}" ${act.actNum}막.
+내용:${act.summary} | 감정:${act.emotion} | 인물:${charsStr}
+JSON만:{"sceneTitle":"${act.title}","songTitle":"넘버제목","lyrics":"가사 4-6줄","characters":"등장인물","sunoPrompt":"영문 Suno(50단어이내)","bgPrompt":"영문 배경이미지, 2.5D parallax composition with distinct far background layer(sky/distant scenery), mid layer(buildings/trees/environment), near foreground layer(props/ground details), theatrical stage lighting, --ar 16:9","emotion":"${act.emotion}","mood":"분위기 한국어"}`);
       scenes.push(parseJSON(sn));
     }
     setStep(4,'커튼콜 작성 중...');
     const s4=await callGemini(`뮤지컬 "${struct.title}" 커튼콜.
 오프닝가사:${opening.lyrics} | 줄거리:${struct.synopsis}
-JSON만:{"songTitle":"커튼콜 제목(Reprise가능)","lyrics":"가사 4-6줄(감동적 마무리)","sunoPrompt":"영문 Suno(emotional finale,50단어이내)","bgPrompt":"영문 배경이미지(grand finale,all cast,--ar 16:9)","mood":"분위기 한국어"}`);
+JSON만:{"songTitle":"커튼콜 제목(Reprise가능)","lyrics":"가사 4-6줄(감동적 마무리)","sunoPrompt":"영문 Suno(emotional finale,50단어이내)","bgPrompt":"영문 배경이미지(grand finale, all cast), 2.5D parallax composition with distinct far background layer(sky/distant scenery), mid layer(buildings/trees/environment), near foreground layer(props/ground details), theatrical stage lighting, --ar 16:9","mood":"분위기 한국어"}`);
     const curtain=parseJSON(s4);
     setStep(5,'완성 정리 중...');
     generatedData={title:struct.title,genre,characters:struct.characters,synopsis:struct.synopsis,setting,opening,scenes,curtain};
