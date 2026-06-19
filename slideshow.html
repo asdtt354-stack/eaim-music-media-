@@ -382,7 +382,8 @@ function updateStatusBadge(mode) {
 }
 async function fetchGeminiImage(prompt) {
   if (imgCache[prompt]) return imgCache[prompt];
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${GEMINI_KEY}`;
+  // gemini-2.5-flash-image 모델 사용 (한국 지원)
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_KEY}`;
   const res = await fetch(url, {method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({contents:[{parts:[{text:prompt+', cinematic, theatrical, dramatic lighting, 16:9'}]}],generationConfig:{responseModalities:['TEXT','IMAGE']}})});
   if (!res.ok) throw new Error('Gemini '+res.status);
@@ -392,7 +393,10 @@ async function fetchGeminiImage(prompt) {
   const dataUrl = `data:${imgPart.inlineData.mimeType};base64,${imgPart.inlineData.data}`;
   imgCache[prompt] = dataUrl; return dataUrl;
 }
-function getPollinationsUrl(prompt) { return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt+', cinematic, theatrical')}?width=1280&height=720&nologo=true`; }
+function getPollinationsUrl(prompt, seed) {
+  const s = seed || Math.floor(Math.random()*99999);
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt+', cinematic, theatrical, dramatic lighting')}?width=1280&height=720&nologo=true&seed=${s}`;
+}
 async function loadBgImage(scene, idx) {
   const el = document.getElementById(`scene-slide-${idx}`); if (!el) return;
   const spinner = document.getElementById(`bg-spinner-${idx}`);
@@ -401,13 +405,25 @@ async function loadBgImage(scene, idx) {
   if (GEMINI_KEY) {
     if(spinner) spinner.style.display='flex';
     try { const d=await fetchGeminiImage(scene.imagePrompt); if(spinner)spinner.style.display='none'; setImgSrc(idx,d,'🔴 Gemini'); }
-    catch(e) { if(spinner)spinner.style.display='none'; setImgSrc(idx,getPollinationsUrl(scene.imagePrompt),'🟢 Pollinations'); }
-  } else { if(spinner) spinner.style.display='none'; setImgSrc(idx,getPollinationsUrl(scene.imagePrompt),'🟢 Pollinations'); }
+    catch(e) { if(spinner)spinner.style.display='none'; setImgSrcWithFallback(idx, scene.imagePrompt); }
+  } else { if(spinner) spinner.style.display='none'; setImgSrcWithFallback(idx, scene.imagePrompt); }
+}
+function setImgSrcWithFallback(idx, prompt) {
+  const img=document.getElementById(`bgimg-${idx}`); if(!img) return;
+  const url = getPollinationsUrl(prompt);
+  img.onload=()=>{ img.style.opacity='.45'; const b=document.getElementById(`src-badge-${idx}`); if(b){b.style.display='block';b.textContent='🟢 Pollinations';} };
+  img.onerror=()=>{
+    // Pollinations 실패시 다른 seed로 재시도
+    const url2 = getPollinationsUrl(prompt, Math.floor(Math.random()*99999));
+    img.onerror=()=>{ img.style.display='none'; };
+    img.src=url2;
+  };
+  img.src=url;
 }
 function setImgSrc(idx,src,label) {
   const img=document.getElementById(`bgimg-${idx}`); if(!img) return;
   img.onload=()=>{ img.style.opacity='.45'; const b=document.getElementById(`src-badge-${idx}`); if(b){b.style.display='block';b.textContent=label;} };
-  img.onerror=()=>{ img.style.display='none'; };
+  img.onerror=()=>{ if(label.includes('Gemini')) setImgSrcWithFallback(idx, src); else img.style.display='none'; };
   img.src=src;
 }
 
