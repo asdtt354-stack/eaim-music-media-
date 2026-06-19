@@ -385,7 +385,7 @@ async function fetchGeminiImage(prompt) {
   // gemini-2.5-flash-image 모델 사용 (한국 지원)
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_KEY}`;
   const res = await fetch(url, {method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({contents:[{parts:[{text:prompt+', cinematic, theatrical, dramatic lighting, 16:9'}]}],generationConfig:{responseModalities:['TEXT','IMAGE']}})});
+    body:JSON.stringify({contents:[{parts:[{text:prompt+', 2.5D style, semi-3D illustration, cinematic, theatrical, dramatic lighting, 16:9'}]}],generationConfig:{responseModalities:['TEXT','IMAGE']}})});
   if (!res.ok) throw new Error('Gemini '+res.status);
   const data = await res.json();
   const imgPart = (data?.candidates?.[0]?.content?.parts||[]).find(p=>p.inlineData);
@@ -395,7 +395,7 @@ async function fetchGeminiImage(prompt) {
 }
 function getPollinationsUrl(prompt, seed) {
   const s = seed || Math.floor(Math.random()*99999);
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt+', cinematic, theatrical, dramatic lighting')}?width=1280&height=720&nologo=true&seed=${s}`;
+  return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt+', 2.5D style, semi-3D illustration, cinematic, theatrical, dramatic lighting')}?width=1280&height=720&nologo=true&seed=${s}`;
 }
 async function loadBgImage(scene, idx) {
   const el = document.getElementById(`scene-slide-${idx}`); if (!el) return;
