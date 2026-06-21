@@ -168,6 +168,46 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   .np-paper{box-shadow:none;margin:0;padding:16px}
   body>*:not(#newspaper-modal){display:none!important}
 }
+
+/* ══ 음악 편지 ══ */
+#letter-modal{display:none;position:fixed;inset:0;background:#f9f0e0;z-index:9999;overflow-y:auto}
+#letter-modal.open{display:block}
+.letter-toolbar{position:sticky;top:0;background:#8B4513;color:#fff;padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:10;flex-wrap:wrap}
+.letter-toolbar button{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:bold;font-family:inherit}
+.letter-paper{max-width:680px;margin:20px auto;background:#fffdf5;padding:40px;box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid #e8d5a3;position:relative;font-family:'맑은 고딕',serif;line-height:2}
+.letter-paper::before{content:'';position:absolute;left:60px;top:0;bottom:0;width:1px;background:rgba(200,160,80,.2)}
+.letter-date{text-align:right;font-size:13px;color:#8B4513;margin-bottom:20px}
+.letter-to{font-size:15px;font-weight:bold;color:#333;margin-bottom:20px}
+.letter-music-box{background:#fff8e7;border:1px solid #e8d5a3;border-radius:8px;padding:12px 16px;margin:16px 0;display:flex;gap:12px;align-items:center}
+.letter-music-img{width:80px;height:80px;object-fit:cover;border-radius:6px;border:1px solid #ddd}
+.letter-body{min-height:200px;font-size:15px;color:#333;line-height:2.2}
+.letter-from{text-align:right;margin-top:30px;font-size:14px;color:#555}
+.letter-input{width:100%;border:none;border-bottom:1px dashed #c8a050;background:transparent;font-family:inherit;font-size:inherit;outline:none;color:#333;padding:2px;line-height:2}
+.letter-textarea{width:100%;border:none;background:transparent;font-family:inherit;font-size:15px;outline:none;color:#333;resize:vertical;line-height:2.2;min-height:180px}
+
+/* ══ 음악 인터뷰 ══ */
+#interview-modal{display:none;position:fixed;inset:0;background:#1a1a2e;z-index:9999;overflow-y:auto}
+#interview-modal.open{display:block}
+.interview-toolbar{position:sticky;top:0;background:#0f0f1a;color:#fff;padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:10;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.1)}
+.interview-toolbar button{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:bold;font-family:inherit}
+.interview-paper{max-width:720px;margin:20px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.4)}
+.interview-header{background:linear-gradient(135deg,#1a1a2e,#7C4DFF);padding:24px;color:#fff;text-align:center}
+.interview-title{font-size:22px;font-weight:900;letter-spacing:1px}
+.interview-subtitle{font-size:12px;opacity:.7;margin-top:4px}
+.interview-music{display:flex;gap:16px;align-items:center;background:rgba(255,255,255,.1);border-radius:8px;padding:12px;margin-top:16px}
+.interview-music-img{width:70px;height:70px;object-fit:cover;border-radius:6px}
+.qa-section{padding:24px}
+.qa-item{margin-bottom:24px;border-left:3px solid #7C4DFF;padding-left:16px}
+.qa-q{font-size:13px;font-weight:900;color:#7C4DFF;margin-bottom:8px;letter-spacing:.5px}
+.qa-a{font-size:14px;color:#333;line-height:1.8}
+.qa-textarea{width:100%;border:none;border-bottom:1px dashed #ccc;background:transparent;font-family:inherit;font-size:14px;outline:none;color:#333;resize:vertical;line-height:1.8;min-height:60px;padding:4px 0}
+.interview-signature{padding:16px 24px;background:#f8f8f8;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#888}
+
+@media print{
+  #letter-modal .letter-toolbar,#interview-modal .interview-toolbar{display:none!important}
+  #letter-modal,#interview-modal{position:absolute}
+  body>*:not(#letter-modal):not(#interview-modal):not(#newspaper-modal){display:none!important}
+}
 </style>
 </head>
 <body>
@@ -318,7 +358,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           <button class="btn btn-secondary" onclick="generateImage()">🔄 다시 생성</button>
           <button class="btn btn-secondary" onclick="addMore()">➕ 장면 추가</button>
           <button class="btn btn-primary" onclick="printDirect()" style="background:#4CAF82;border-color:#4CAF82">🖨️ 바로 출력</button>
-          <button class="btn btn-primary" onclick="openNewspaper()" style="background:#C9A84C;border-color:#C9A84C;color:#1a1a1a">📰 신문으로 편집</button>
+          <button class="btn btn-primary" onclick="openNewspaper()" style="background:#C9A84C;border-color:#C9A84C;color:#1a1a1a">📰 음악 신문</button>
+          <button class="btn btn-primary" onclick="openLetter()" style="background:#E94560;border-color:#E94560">💌 음악 편지</button>
+          <button class="btn btn-primary" onclick="openInterview()" style="background:#7C4DFF;border-color:#7C4DFF">🎤 음악 인터뷰</button>
         </div>
       </div>
     </div>
@@ -670,7 +712,68 @@ function printDirect(){
     <img src="${generatedImageUrl}" />
     <div class="feeling">${document.getElementById('feeling-input') ? document.getElementById('feeling-input').value : ''}</div>
     <script>window.onload=()=>{window.print()}<\/script>
-  </body></html>`);
+  
+<!-- 음악 편지 모달 -->
+<div id="letter-modal">
+  <div class="letter-toolbar" style="background:#8B4513">
+    <button onclick="closeLetter()" style="background:rgba(255,255,255,.2);color:#fff">✕ 닫기</button>
+    <span style="flex:1;font-size:14px;font-weight:bold">💌 음악 편지</span>
+    <button onclick="window.print()" style="background:#C9A84C;color:#1a1a1a">🖨️ 인쇄 / PDF 저장</button>
+  </div>
+  <div class="letter-paper" id="letter-paper">
+    <div class="letter-date">
+      <input class="letter-input" id="letter-date" style="width:200px;text-align:right;font-size:13px;color:#8B4513">
+    </div>
+    <div class="letter-to">
+      <input class="letter-input" id="letter-to" placeholder="받는 사람 (예: 사랑하는 친구에게)" style="font-size:15px;font-weight:bold">
+    </div>
+    <div class="letter-music-box">
+      <img id="letter-img" class="letter-music-img" src="" alt="감상 이미지">
+      <div>
+        <div style="font-size:12px;color:#888;margin-bottom:4px">🎵 이 음악을 들으며...</div>
+        <input class="letter-input" id="letter-song" placeholder="음악 제목 / 아티스트" style="font-size:13px;font-weight:bold;color:#8B4513">
+      </div>
+    </div>
+    <div class="letter-body">
+      <textarea class="letter-textarea" id="letter-body" placeholder="음악을 듣고 느낀 감정을 편지로 써보세요...&#10;&#10;이 음악을 들었을 때 나는...&#10;&#10;네가 이 음악을 듣는다면...&#10;&#10;음악이 나에게 전해주는 메시지는..."></textarea>
+    </div>
+    <div class="letter-from">
+      <div style="font-size:12px;color:#888;margin-bottom:4px">보내는 사람</div>
+      <input class="letter-input" id="letter-from" placeholder="이름을 적어요" style="text-align:right;font-size:14px;font-weight:bold;width:200px">
+    </div>
+  </div>
+</div>
+
+<!-- 음악 인터뷰 모달 -->
+<div id="interview-modal">
+  <div class="interview-toolbar">
+    <button onclick="closeInterview()" style="background:rgba(255,255,255,.1);color:#fff">✕ 닫기</button>
+    <span style="flex:1;font-size:14px;font-weight:bold;color:#fff">🎤 음악 인터뷰</span>
+    <button onclick="generateInterviewQ()" style="background:#7C4DFF;color:#fff">✨ AI 질문 생성</button>
+    <button onclick="window.print()" style="background:#C9A84C;color:#1a1a1a">🖨️ 인쇄 / PDF 저장</button>
+  </div>
+  <div class="interview-paper" id="interview-paper">
+    <div class="interview-header">
+      <div class="interview-title">🎤 MUSIC INTERVIEW</div>
+      <input style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:#fff;font-size:12px;text-align:center;width:100%;outline:none;margin-top:6px;font-family:inherit" id="interview-subtitle" placeholder="음악 감상 인터뷰 — 학교명 / 학년 반 이름">
+      <div class="interview-music" id="interview-music-box">
+        <img id="interview-img" class="interview-music-img" src="" alt="">
+        <div style="text-align:left">
+          <div style="font-size:11px;opacity:.7;margin-bottom:4px">🎵 오늘의 음악</div>
+          <input style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:#fff;font-size:14px;font-weight:bold;outline:none;font-family:inherit;width:200px" id="interview-song" placeholder="음악 제목 / 아티스트">
+        </div>
+      </div>
+    </div>
+    <div class="qa-section" id="qa-section">
+      <!-- AI가 생성하거나 기본 질문들 -->
+    </div>
+    <div class="interview-signature">
+      <span>EAIM 음악 감상 인터뷰</span>
+      <input style="border:none;border-bottom:1px dashed #ccc;background:transparent;font-family:inherit;font-size:12px;outline:none;color:#555;text-align:right;width:150px" id="interview-date" placeholder="날짜">
+    </div>
+  </div>
+</div>
+</body></html>`);
   w.document.close();
 }
 
@@ -729,6 +832,103 @@ function printNewspaper(){
   window.print();
 }
 
+
+// ══════════════════════════
+// 💌 음악 편지
+// ══════════════════════════
+function openLetter(){
+  if(!generatedImageUrl){ showToast('⚠️ 먼저 이미지를 생성해주세요'); return; }
+  document.getElementById('letter-img').src = generatedImageUrl;
+  const now = new Date();
+  document.getElementById('letter-date').value = now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일';
+  // 감상 내용 자동 채우기
+  const feeling = document.getElementById('prompt-kr') ? document.getElementById('prompt-kr').value : '';
+  if(feeling && !document.getElementById('letter-body').value){
+    document.getElementById('letter-body').value = feeling;
+  }
+  document.getElementById('letter-modal').classList.add('open');
+}
+
+function closeLetter(){
+  document.getElementById('letter-modal').classList.remove('open');
+}
+
+// ══════════════════════════
+// 🎤 음악 인터뷰
+// ══════════════════════════
+const defaultQuestions = [
+  '이 음악을 처음 들었을 때 어떤 느낌이었나요?',
+  '이 음악을 듣고 떠오른 장면이나 색깔이 있다면?',
+  '이 음악에서 가장 인상 깊었던 부분은 어디인가요? (리듬, 선율, 가사 등)',
+  '이 음악이 어떤 감정을 표현하고 있다고 생각하나요?',
+  '이 음악을 누구에게, 어떤 상황에서 들려주고 싶나요?',
+  '이 음악을 통해 새롭게 알게 된 것이 있다면 무엇인가요?',
+];
+
+function openInterview(){
+  if(!generatedImageUrl){ showToast('⚠️ 먼저 이미지를 생성해주세요'); return; }
+  document.getElementById('interview-img').src = generatedImageUrl;
+  const now = new Date();
+  document.getElementById('interview-date').value = now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일';
+  buildQASection(defaultQuestions);
+  document.getElementById('interview-modal').classList.add('open');
+}
+
+function closeInterview(){
+  document.getElementById('interview-modal').classList.remove('open');
+}
+
+function buildQASection(questions){
+  const section = document.getElementById('qa-section');
+  section.innerHTML = '';
+  questions.forEach((q, i) => {
+    const div = document.createElement('div');
+    div.className = 'qa-item';
+    div.innerHTML = `
+      <div class="qa-q">Q${i+1}. ${q}</div>
+      <textarea class="qa-textarea" placeholder="답변을 적어보세요..." rows="3"></textarea>
+    `;
+    section.appendChild(div);
+  });
+}
+
+async function generateInterviewQ(){
+  const feeling = document.getElementById('prompt-kr') ? document.getElementById('prompt-kr').value : '';
+  const song = document.getElementById('interview-song').value;
+  const apiKey = localStorage.getItem('gemini_api_key');
+  if(!apiKey){ showToast('⚠️ Gemini API 키를 먼저 입력해주세요'); return; }
+  showToast('✨ AI가 질문을 생성하고 있어요...');
+  try {
+    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({contents:[{parts:[{text:
+        `음악 감상 수업에서 중학생이 다음 음악을 감상했습니다.
+음악: ${song||'(제목 미입력)'}
+학생의 감상: ${feeling||'(감상 미입력)'}
+
+이 학생에게 맞는 음악 감상 인터뷰 질문 6개를 만들어주세요.
+- 음악 요소(리듬, 선율, 화성, 음색)와 연결된 질문 포함
+- 학생의 감정과 경험을 끌어내는 질문
+- 서논술형 평가로 활용 가능한 깊이있는 질문
+- 번호 없이 질문만, 한 줄씩, 총 6개만 출력하세요`
+      }]}]})
+    });
+    const data = await resp.json();
+    const text = data.contents?.[0]?.parts?.[0]?.text || data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const questions = text.split('\n').map(q=>q.trim()).filter(q=>q.length>5).slice(0,6);
+    if(questions.length > 0){
+      buildQASection(questions);
+      showToast('✅ AI 질문 생성 완료!');
+    } else {
+      showToast('⚠️ 질문 생성 실패, 기본 질문으로 표시해요');
+      buildQASection(defaultQuestions);
+    }
+  } catch(e){
+    showToast('⚠️ AI 연결 실패, 기본 질문으로 표시해요');
+    buildQASection(defaultQuestions);
+  }
+}
+
 </script>
 
 <!-- 신문 편집 모달 -->
@@ -754,6 +954,67 @@ function printNewspaper(){
     </div>
     <input class="np-input np-headline" id="np-headline" placeholder="신문 헤드라인을 입력하세요" style="font-size:22px;font-weight:900;text-align:center;width:100%;margin:12px 0 8px">
     <div class="np-grid col2" id="np-grid"></div>
+  </div>
+</div>
+
+<!-- 음악 편지 모달 -->
+<div id="letter-modal">
+  <div class="letter-toolbar" style="background:#8B4513">
+    <button onclick="closeLetter()" style="background:rgba(255,255,255,.2);color:#fff">✕ 닫기</button>
+    <span style="flex:1;font-size:14px;font-weight:bold">💌 음악 편지</span>
+    <button onclick="window.print()" style="background:#C9A84C;color:#1a1a1a">🖨️ 인쇄 / PDF 저장</button>
+  </div>
+  <div class="letter-paper" id="letter-paper">
+    <div class="letter-date">
+      <input class="letter-input" id="letter-date" style="width:200px;text-align:right;font-size:13px;color:#8B4513">
+    </div>
+    <div class="letter-to">
+      <input class="letter-input" id="letter-to" placeholder="받는 사람 (예: 사랑하는 친구에게)" style="font-size:15px;font-weight:bold">
+    </div>
+    <div class="letter-music-box">
+      <img id="letter-img" class="letter-music-img" src="" alt="감상 이미지">
+      <div>
+        <div style="font-size:12px;color:#888;margin-bottom:4px">🎵 이 음악을 들으며...</div>
+        <input class="letter-input" id="letter-song" placeholder="음악 제목 / 아티스트" style="font-size:13px;font-weight:bold;color:#8B4513">
+      </div>
+    </div>
+    <div class="letter-body">
+      <textarea class="letter-textarea" id="letter-body" placeholder="음악을 듣고 느낀 감정을 편지로 써보세요...&#10;&#10;이 음악을 들었을 때 나는...&#10;&#10;네가 이 음악을 듣는다면...&#10;&#10;음악이 나에게 전해주는 메시지는..."></textarea>
+    </div>
+    <div class="letter-from">
+      <div style="font-size:12px;color:#888;margin-bottom:4px">보내는 사람</div>
+      <input class="letter-input" id="letter-from" placeholder="이름을 적어요" style="text-align:right;font-size:14px;font-weight:bold;width:200px">
+    </div>
+  </div>
+</div>
+
+<!-- 음악 인터뷰 모달 -->
+<div id="interview-modal">
+  <div class="interview-toolbar">
+    <button onclick="closeInterview()" style="background:rgba(255,255,255,.1);color:#fff">✕ 닫기</button>
+    <span style="flex:1;font-size:14px;font-weight:bold;color:#fff">🎤 음악 인터뷰</span>
+    <button onclick="generateInterviewQ()" style="background:#7C4DFF;color:#fff">✨ AI 질문 생성</button>
+    <button onclick="window.print()" style="background:#C9A84C;color:#1a1a1a">🖨️ 인쇄 / PDF 저장</button>
+  </div>
+  <div class="interview-paper" id="interview-paper">
+    <div class="interview-header">
+      <div class="interview-title">🎤 MUSIC INTERVIEW</div>
+      <input style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:#fff;font-size:12px;text-align:center;width:100%;outline:none;margin-top:6px;font-family:inherit" id="interview-subtitle" placeholder="음악 감상 인터뷰 — 학교명 / 학년 반 이름">
+      <div class="interview-music" id="interview-music-box">
+        <img id="interview-img" class="interview-music-img" src="" alt="">
+        <div style="text-align:left">
+          <div style="font-size:11px;opacity:.7;margin-bottom:4px">🎵 오늘의 음악</div>
+          <input style="background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.3);color:#fff;font-size:14px;font-weight:bold;outline:none;font-family:inherit;width:200px" id="interview-song" placeholder="음악 제목 / 아티스트">
+        </div>
+      </div>
+    </div>
+    <div class="qa-section" id="qa-section">
+      <!-- AI가 생성하거나 기본 질문들 -->
+    </div>
+    <div class="interview-signature">
+      <span>EAIM 음악 감상 인터뷰</span>
+      <input style="border:none;border-bottom:1px dashed #ccc;background:transparent;font-family:inherit;font-size:12px;outline:none;color:#555;text-align:right;width:150px" id="interview-date" placeholder="날짜">
+    </div>
   </div>
 </div>
 </body>
