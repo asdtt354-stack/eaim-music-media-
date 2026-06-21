@@ -149,7 +149,7 @@ input[type=range].fader::-webkit-slider-thumb{width:22px;height:10px;border-radi
   <div class="channel" id="ch-bgm">
     <div class="ch-header">
       <div class="ch-num" style="background:rgba(105,240,174,.2);color:var(--green)">1</div>
-      <input class="ch-name-input" value="BGM &#48176;&#44221;&#51020;&#50545;" id="name-bgm">
+      <input class="ch-name-input" value="BGM 배경음악" id="name-bgm">
       <div class="led" id="led-bgm"></div>
     </div>
     <div class="upload-zone" id="zone-bgm"><input type="file" id="file-bgm" accept="audio/*" onchange="loadFile('bgm',this)"><div class="upload-icon">&#127925;</div><div class="upload-label">MP3 / WAV &#50629;&#47196;&#46300;</div><div class="upload-filename" id="fname-bgm"></div></div>
@@ -244,6 +244,7 @@ input[type=range].fader::-webkit-slider-thumb{width:22px;height:10px;border-radi
         <button class="save-btn load" onclick="loadCueFromStorage()">&#128194; &#48520;&#47084;&#50724;&#44592;</button>
       </div>
       <button onclick="saveAllCues()" style="margin-top:6px;width:100%;padding:7px;border-radius:6px;cursor:pointer;background:rgba(206,147,216,.1);border:1px solid var(--purple);color:var(--purple);font-family:inherit;font-size:11px">&#128313; JSON &#45236;&#48372;&#45236;&#44592;</button>
+      <button onclick="downloadMix()" style="margin-top:6px;width:100%;padding:7px;border-radius:6px;cursor:pointer;background:rgba(105,240,174,.1);border:1px solid var(--green);color:var(--green);font-family:inherit;font-size:11px;font-weight:bold">⬇️ 믹싱 결과 다운로드 (WAV)</button>
     </div>
   </div>
 
@@ -578,6 +579,70 @@ function saveAllCues(){
   const blob=new Blob([JSON.stringify(cues,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='eaim_mixer_cues.json';a.click();
   toast('📥 내보내기 완료');
+}
+
+async function downloadMix(){
+  // 현재 재생 중인 오디오들을 Web Audio API로 믹싱해서 WAV로 다운로드
+  const activeTrack = Object.values(tracks).find(t => t.audio && t.audio.src);
+  if(!activeTrack){ toast('⚠️ 먼저 오디오를 업로드해주세요'); return; }
+
+  toast('⏳ 믹싱 중... 잠시 기다려주세요');
+
+  try {
+    const offlineCtx = new OfflineAudioContext(2, 44100 * 60, 44100); // 최대 60초
+    let hasAudio = false;
+
+    for(const [key, track] of Object.entries(tracks)){
+      if(!track.audio || !track.audio.src) continue;
+      hasAudio = true;
+      const resp = await fetch(track.audio.src);
+      const arrayBuf = await resp.arrayBuffer();
+      const audioBuf = await offlineCtx.decodeAudioData(arrayBuf);
+      const src = offlineCtx.createBufferSource();
+      src.buffer = audioBuf;
+      // 볼륨 적용
+      const gainNode = offlineCtx.createGain();
+      gainNode.gain.value = (track.vol || 100) / 100 * (masterVol / 100);
+      src.connect(gainNode);
+      gainNode.connect(offlineCtx.destination);
+      src.start(0);
+    }
+
+    if(!hasAudio){ toast('⚠️ 업로드된 오디오가 없습니다'); return; }
+
+    const renderedBuf = await offlineCtx.startRendering();
+    const wavBlob = bufferToWav(renderedBuf);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(wavBlob);
+    a.download = 'EAIM_믹싱결과.wav';
+    a.click();
+    toast('✅ 다운로드 완료!');
+  } catch(e) {
+    toast('⚠️ 다운로드 실패: ' + e.message);
+  }
+}
+
+function bufferToWav(buffer){
+  const numCh = buffer.numberOfChannels;
+  const length = buffer.length * numCh * 2 + 44;
+  const out = new ArrayBuffer(length);
+  const view = new DataView(out);
+  const writeStr = (offset, str) => { for(let i=0;i<str.length;i++) view.setUint8(offset+i, str.charCodeAt(i)); };
+  writeStr(0,'RIFF'); view.setUint32(4,length-8,true);
+  writeStr(8,'WAVE'); writeStr(12,'fmt ');
+  view.setUint32(16,16,true); view.setUint16(20,1,true);
+  view.setUint16(22,numCh,true); view.setUint32(24,buffer.sampleRate,true);
+  view.setUint32(28,buffer.sampleRate*numCh*2,true);
+  view.setUint16(32,numCh*2,true); view.setUint16(34,16,true);
+  writeStr(36,'data'); view.setUint32(40,length-44,true);
+  let offset=44;
+  for(let i=0;i<buffer.length;i++){
+    for(let ch=0;ch<numCh;ch++){
+      const s=Math.max(-1,Math.min(1,buffer.getChannelData(ch)[i]));
+      view.setInt16(offset,s<0?s*0x8000:s*0x7FFF,true); offset+=2;
+    }
+  }
+  return new Blob([out],{type:'audio/wav'});
 }
 
 function buildMasterVU(){const w=document.getElementById('vu-master');for(let i=0;i<14;i++){const b=document.createElement('div');b.className='vu-bar';b.style.height='4px';w.appendChild(b);}}
