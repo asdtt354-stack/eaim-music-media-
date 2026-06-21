@@ -111,6 +111,16 @@ input[type=range].fader::-webkit-slider-thumb{width:22px;height:10px;border-radi
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
 @keyframes signalSlide{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+.rec-btn{width:100%;margin:4px 12px 0;padding:6px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:bold;border:1px solid var(--red);background:rgba(229,57,53,.1);color:var(--red);font-family:inherit;transition:all .2s}
+.rec-btn.recording{background:var(--red);color:#fff;animation:recPulse 1s infinite}
+@keyframes recPulse{0%,100%{opacity:1}50%{opacity:.6}}
+#rec-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;align-items:center;justify-content:center}
+#rec-modal.open{display:flex}
+.rec-modal-box{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px;width:90%;max-width:360px;text-align:center}
+.rec-timer{font-size:48px;font-weight:bold;color:var(--red);margin:16px 0;font-family:'맑은 고딕',sans-serif}
+.rec-wave{height:60px;margin:12px 0;border-radius:8px;background:rgba(229,57,53,.1);display:flex;align-items:center;justify-content:center;gap:3px}
+.rec-bar{width:4px;background:var(--red);border-radius:2px;transition:height .1s}
 </style>
 </head>
 <body>
@@ -153,6 +163,7 @@ input[type=range].fader::-webkit-slider-thumb{width:22px;height:10px;border-radi
       <div class="led" id="led-bgm"></div>
     </div>
     <div class="upload-zone" id="zone-bgm"><input type="file" id="file-bgm" accept="audio/*" onchange="loadFile('bgm',this)"><div class="upload-icon">&#127925;</div><div class="upload-label">MP3 / WAV &#50629;&#47196;&#46300;</div><div class="upload-filename" id="fname-bgm"></div></div>
+    <button class="rec-btn" id="rec-btn-bgm" onclick="openRecModal('bgm')">🎤 바로 녹음하기</button>
     <div class="url-row"><input class="url-input" id="url-bgm" placeholder="&#46608;&#45716; URL &#51077;&#47141;..."><button class="url-load-btn" onclick="loadUrl('bgm')">&#47196;&#46300;</button></div>
     <div class="time-display" id="time-bgm">00:00 / 00:00</div>
     <div class="eq-display"><canvas id="eq-canvas-bgm"></canvas><div class="eq-label">EQ</div></div>
@@ -181,6 +192,7 @@ input[type=range].fader::-webkit-slider-thumb{width:22px;height:10px;border-radi
       <div class="led" id="led-mr"></div>
     </div>
     <div class="upload-zone" id="zone-mr"><input type="file" id="file-mr" accept="audio/*" onchange="loadFile('mr',this)"><div class="upload-icon">&#127932;</div><div class="upload-label">MR / &#48152;&#51452; &#50629;&#47196;&#46300;</div><div class="upload-filename" id="fname-mr"></div></div>
+    <button class="rec-btn" id="rec-btn-mr" onclick="openRecModal('mr')">🎤 바로 녹음하기</button>
     <div class="url-row"><input class="url-input" id="url-mr" placeholder="&#46608;&#45716; URL &#51077;&#47141;..."><button class="url-load-btn" onclick="loadUrl('mr')">&#47196;&#46300;</button></div>
     <div class="time-display" id="time-mr">00:00 / 00:00</div>
     <div class="eq-display"><canvas id="eq-canvas-mr"></canvas><div class="eq-label">EQ</div></div>
@@ -209,6 +221,7 @@ input[type=range].fader::-webkit-slider-thumb{width:22px;height:10px;border-radi
       <div class="led" id="led-sfx2"></div>
     </div>
     <div class="upload-zone" id="zone-sfx2"><input type="file" id="file-sfx2" accept="audio/*" onchange="loadFile('sfx2',this)"><div class="upload-icon">&#127754;</div><div class="upload-label">앰비언스 / 나레이션 업로드</div><div class="upload-filename" id="fname-sfx2"></div></div>
+    <button class="rec-btn" id="rec-btn-sfx2" onclick="openRecModal('sfx2')">🎤 바로 녹음하기</button>
     <div class="url-row"><input class="url-input" id="url-sfx2" placeholder="&#46608;&#45716; URL &#51077;&#47141;..."><button class="url-load-btn" onclick="loadUrl('sfx2')">&#47196;&#46300;</button></div>
     <div class="time-display" id="time-sfx2">00:00 / 00:00</div>
     <div class="eq-display"><canvas id="eq-canvas-sfx2"></canvas><div class="eq-label">EQ</div></div>
@@ -764,6 +777,111 @@ function autoImportFromMaker(){
 buildMasterVU();buildPresetPalette();loadDefaultSfx();animateVU();drawAllEQ(null);autoImportFromMaker();
 setTimeout(()=>{const h=PRESETS.find(p=>p.id==='hall');applyPreset(h,false);},300);
 toast('🎚 EAIM 오디오 믹서 준비 완료 — 공연 파이팅! 🎭');
+
+// ══════════════════════════
+// 🎤 녹음 기능
+// ══════════════════════════
+let recMediaRecorder = null;
+let recChunks = [];
+let recTargetCh = null;
+let recTimerInterval = null;
+let recSeconds = 0;
+let recAnalyser = null;
+let recAnimFrame = null;
+let recStream = null;
+
+function openRecModal(ch){
+  recTargetCh = ch;
+  const chName = document.getElementById('name-'+ch).value;
+  document.getElementById('rec-ch-label').textContent = '[ ' + chName + ' ] 채널에 녹음합니다';
+  document.getElementById('rec-timer').textContent = '00:00';
+  document.getElementById('rec-start-btn').disabled = false;
+  document.getElementById('rec-stop-btn').disabled = true;
+  document.getElementById('rec-modal').classList.add('open');
+  // 파형 초기화
+  for(let i=0;i<8;i++) document.getElementById('rb'+i).style.height='8px';
+}
+
+function closeRecModal(){
+  stopRecording();
+  document.getElementById('rec-modal').classList.remove('open');
+}
+
+async function startRecording(){
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    const audioCtx = new AudioContext();
+    const src = audioCtx.createMediaStreamSource(recStream);
+    recAnalyser = audioCtx.createAnalyser();
+    recAnalyser.fftSize = 64;
+    src.connect(recAnalyser);
+    
+    recChunks = [];
+    recMediaRecorder = new MediaRecorder(recStream);
+    recMediaRecorder.ondataavailable = e => recChunks.push(e.data);
+    recMediaRecorder.onstop = applyRecording;
+    recMediaRecorder.start();
+    
+    recSeconds = 0;
+    document.getElementById('rec-start-btn').disabled = true;
+    document.getElementById('rec-stop-btn').disabled = false;
+    
+    recTimerInterval = setInterval(()=>{
+      recSeconds++;
+      const m = String(Math.floor(recSeconds/60)).padStart(2,'0');
+      const s = String(recSeconds%60).padStart(2,'0');
+      document.getElementById('rec-timer').textContent = m+':'+s;
+    }, 1000);
+    
+    // 파형 애니메이션
+    const data = new Uint8Array(recAnalyser.frequencyBinCount);
+    function drawWave(){
+      recAnimFrame = requestAnimationFrame(drawWave);
+      recAnalyser.getByteFrequencyData(data);
+      for(let i=0;i<8;i++){
+        const h = Math.max(8, (data[i*2]||0) / 255 * 50);
+        document.getElementById('rb'+i).style.height = h+'px';
+      }
+    }
+    drawWave();
+    toast('🎤 녹음 중...');
+  } catch(e){
+    toast('⚠️ 마이크 접근 권한이 필요해요');
+  }
+}
+
+function stopRecording(){
+  if(recMediaRecorder && recMediaRecorder.state !== 'inactive') recMediaRecorder.stop();
+  if(recStream) recStream.getTracks().forEach(t=>t.stop());
+  clearInterval(recTimerInterval);
+  cancelAnimationFrame(recAnimFrame);
+  for(let i=0;i<8;i++) document.getElementById('rb'+i).style.height='8px';
+}
+
+function applyRecording(){
+  if(!recChunks.length) return;
+  const blob = new Blob(recChunks, {type:'audio/webm'});
+  const url = URL.createObjectURL(blob);
+  const ch = recTargetCh;
+  const audio = tracks[ch].audio;
+  audio.src = url;
+  audio.load();
+  
+  // 채널에 적용
+  if(tracks[ch].source) { try{tracks[ch].source.disconnect();}catch(e){} }
+  audioCtx.resume().then(()=>{
+    const src2 = audioCtx.createMediaElementSource(audio);
+    tracks[ch].source = src2;
+    src2.connect(tracks[ch].gainNode);
+  }).catch(()=>{});
+  
+  const fname = document.getElementById('fname-'+ch);
+  if(fname) fname.textContent = '🎤 녹음 ' + document.getElementById('rec-timer').textContent;
+  document.getElementById('zone-'+ch).classList.add('loaded');
+  document.getElementById('rec-modal').classList.remove('open');
+  toast('✅ 녹음 완료! 채널에 적용됐어요');
+}
+
 </script>
 
   <!-- 🚦 신호등 알림 -->
@@ -783,5 +901,28 @@ toast('🎚 EAIM 오디오 믹서 준비 완료 — 공연 파이팅! 🎭');
     color:var(--subtext);font-family:inherit;font-size:10px;
     letter-spacing:1px;transition:all .2s;
   ">🚦 슬라이드 연동 OFF</button>
+
+<div id="rec-modal">
+  <div class="rec-modal-box">
+    <div style="font-size:16px;font-weight:bold;color:var(--gold);margin-bottom:8px">🎤 녹음</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="rec-ch-label">채널에 녹음합니다</div>
+    <div class="rec-timer" id="rec-timer">00:00</div>
+    <div class="rec-wave" id="rec-wave">
+      <div class="rec-bar" style="height:8px" id="rb0"></div>
+      <div class="rec-bar" style="height:8px" id="rb1"></div>
+      <div class="rec-bar" style="height:8px" id="rb2"></div>
+      <div class="rec-bar" style="height:8px" id="rb3"></div>
+      <div class="rec-bar" style="height:8px" id="rb4"></div>
+      <div class="rec-bar" style="height:8px" id="rb5"></div>
+      <div class="rec-bar" style="height:8px" id="rb6"></div>
+      <div class="rec-bar" style="height:8px" id="rb7"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button id="rec-start-btn" onclick="startRecording()" style="flex:1;padding:10px;border-radius:8px;border:none;background:var(--red);color:#fff;font-size:14px;font-weight:bold;cursor:pointer;font-family:inherit">⏺ 녹음 시작</button>
+      <button id="rec-stop-btn" onclick="stopRecording()" style="flex:1;padding:10px;border-radius:8px;border:none;background:rgba(255,255,255,.1);color:var(--text);font-size:14px;cursor:pointer;font-family:inherit" disabled>⏹ 중지 & 적용</button>
+    </div>
+    <button onclick="closeRecModal()" style="width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit">취소</button>
+  </div>
+</div>
 </body>
 </html>
