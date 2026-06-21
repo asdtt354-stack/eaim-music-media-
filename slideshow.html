@@ -176,6 +176,37 @@ select.bubble-ctrl-btn{padding:5px 8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes bubblePop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 @keyframes twinkle{from{opacity:.2}to{opacity:.8}}
+
+/* ══ 배경 효과 오버레이 ══ */
+#fx-overlay{position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden}
+#fx-panel{position:fixed;bottom:75px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:10px 16px;display:none;gap:8px;flex-wrap:wrap;justify-content:center;z-index:101}
+#fx-panel.open{display:flex}
+.fx-effect-btn{padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:13px;cursor:pointer;transition:all .2s;font-family:inherit}
+.fx-effect-btn.active{border-color:var(--gold,#C9A84C);background:rgba(201,168,76,.25);color:#C9A84C}
+
+/* 안개 */
+@keyframes fogMove{0%{transform:translateX(-10%) translateY(0) scale(1.1)}50%{transform:translateX(5%) translateY(-3%) scale(1.15)}100%{transform:translateX(-10%) translateY(0) scale(1.1)}}
+.fog-particle{position:absolute;border-radius:50%;background:radial-gradient(ellipse,rgba(255,255,255,.18) 0%,transparent 70%);animation:fogMove linear infinite}
+
+/* 비 */
+@keyframes rainFall{0%{transform:translateY(-10px) translateX(0)}100%{transform:translateY(110vh) translateX(-30px)}}
+.rain-drop{position:absolute;width:1.5px;background:linear-gradient(transparent,rgba(174,214,241,.6));border-radius:1px;animation:rainFall linear infinite}
+
+/* 번개 */
+@keyframes lightning{0%,92%,100%{opacity:0}93%,96%{opacity:1}94%,97%{opacity:0}95%,98%{opacity:.8}}
+#lightning-overlay{position:absolute;inset:0;background:rgba(255,255,255,.85);animation:lightning 4s infinite;opacity:0}
+
+/* 빛 파티클 */
+@keyframes sparkle{0%{transform:translateY(0) scale(0);opacity:0}20%{opacity:1;transform:translateY(-20px) scale(1)}100%{transform:translateY(-80px) scale(0);opacity:0}}
+.light-particle{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,255,200,.9),rgba(255,200,50,.3));animation:sparkle ease-in-out infinite}
+
+/* 눈 */
+@keyframes snowFall{0%{transform:translateY(-10px) translateX(0) rotate(0)}100%{transform:translateY(110vh) translateX(40px) rotate(360deg)}}
+.snow-flake{position:absolute;color:rgba(255,255,255,.8);font-size:14px;animation:snowFall linear infinite}
+
+/* 별 */
+@keyframes starTwinkle{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+.star-particle{position:absolute;color:#fff;animation:starTwinkle ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -273,6 +304,17 @@ select.bubble-ctrl-btn{padding:5px 8px}
 <div id="subtitle-bar" onclick="editSubtitle()">자막을 클릭하여 편집</div>
 
 <div id="stage"></div>
+
+<div id="fx-overlay"></div>
+<div id="fx-panel">
+  <button class="fx-effect-btn" onclick="toggleEffect('fog')">🌫️ 안개</button>
+  <button class="fx-effect-btn" onclick="toggleEffect('rain')">🌧️ 비</button>
+  <button class="fx-effect-btn" onclick="toggleEffect('lightning')">⚡ 번개</button>
+  <button class="fx-effect-btn" onclick="toggleEffect('light')">✨ 빛</button>
+  <button class="fx-effect-btn" onclick="toggleEffect('snow')">❄️ 눈</button>
+  <button class="fx-effect-btn" onclick="toggleEffect('star')">🌟 별</button>
+  <button class="fx-effect-btn" onclick="clearEffects()" style="border-color:#f44336;color:#f44336">✕ 끄기</button>
+</div>
 <div id="controls" style="display:none">
   <button class="ctrl-btn" id="btn-exit">✕</button>
   <button class="ctrl-btn" id="btn-prev">◀</button>
@@ -282,6 +324,7 @@ select.bubble-ctrl-btn{padding:5px 8px}
   <button class="ctrl-btn" id="btn-bubble" onclick="toggleBubblePanel()">💬</button>
   <button class="ctrl-btn" id="btn-char" onclick="toggleCharPanel()">🎭</button>
   <button class="ctrl-btn" id="btn-rec" onclick="toggleRecording()" title="화면 녹화">⏺</button>
+  <button class="ctrl-btn" onclick="toggleFxPanel()" title="배경 효과">🎆</button>
 </div>
 <div id="key-hint">← → 키보드 | ESC 종료</div>
 <button id="back-btn" onclick="goBack()">↩ 처음으로</button>
@@ -867,6 +910,99 @@ window.addEventListener('load',()=>{
   else { updateStatusBadge('pollinations'); }
   initSlideshow();
 });
+
+// ══════════════════════════
+// 🎆 배경 효과
+// ══════════════════════════
+let activeEffects = new Set();
+
+function toggleFxPanel(){
+  document.getElementById('fx-panel').classList.toggle('open');
+}
+
+function toggleEffect(type){
+  const overlay = document.getElementById('fx-overlay');
+  const btn = document.querySelector(`.fx-effect-btn[onclick="toggleEffect('${type}')"]`);
+  
+  if(activeEffects.has(type)){
+    // 끄기
+    activeEffects.delete(type);
+    btn.classList.remove('active');
+    overlay.querySelectorAll('.fx-'+type).forEach(el=>el.remove());
+    if(type==='lightning') overlay.querySelectorAll('#lightning-overlay').forEach(el=>el.remove());
+  } else {
+    // 켜기
+    activeEffects.add(type);
+    btn.classList.add('active');
+    createEffect(type, overlay);
+  }
+}
+
+function createEffect(type, overlay){
+  if(type==='fog'){
+    for(let i=0;i<6;i++){
+      const el=document.createElement('div');
+      el.className='fog-particle fx-fog';
+      const size=200+Math.random()*300;
+      el.style.cssText=`width:${size}px;height:${size*0.6}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${8+Math.random()*8}s;animation-delay:${Math.random()*-8}s;opacity:${0.3+Math.random()*0.4}`;
+      overlay.appendChild(el);
+    }
+  }
+  else if(type==='rain'){
+    for(let i=0;i<80;i++){
+      const el=document.createElement('div');
+      el.className='rain-drop fx-rain';
+      const h=15+Math.random()*25;
+      el.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;height:${h}px;animation-duration:${0.6+Math.random()*0.8}s;animation-delay:${Math.random()*-2}s;opacity:${0.4+Math.random()*0.5}`;
+      overlay.appendChild(el);
+    }
+  }
+  else if(type==='lightning'){
+    const el=document.createElement('div');
+    el.id='lightning-overlay';
+    el.className='fx-lightning';
+    el.style.animationDuration=(3+Math.random()*4)+'s';
+    overlay.appendChild(el);
+  }
+  else if(type==='light'){
+    for(let i=0;i<30;i++){
+      const el=document.createElement('div');
+      el.className='light-particle fx-light';
+      const size=4+Math.random()*10;
+      el.style.cssText=`width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${40+Math.random()*60}%;animation-duration:${2+Math.random()*3}s;animation-delay:${Math.random()*-3}s`;
+      overlay.appendChild(el);
+    }
+  }
+  else if(type==='snow'){
+    const flakes=['❄','❅','❆','*'];
+    for(let i=0;i<40;i++){
+      const el=document.createElement('div');
+      el.className='snow-flake fx-snow';
+      el.textContent=flakes[Math.floor(Math.random()*flakes.length)];
+      const size=10+Math.random()*16;
+      el.style.cssText=`left:${Math.random()*100}%;font-size:${size}px;animation-duration:${4+Math.random()*5}s;animation-delay:${Math.random()*-5}s;opacity:${0.5+Math.random()*0.5}`;
+      overlay.appendChild(el);
+    }
+  }
+  else if(type==='star'){
+    const stars=['★','✦','✧','·','•'];
+    for(let i=0;i<50;i++){
+      const el=document.createElement('div');
+      el.className='star-particle fx-star';
+      el.textContent=stars[Math.floor(Math.random()*stars.length)];
+      const size=8+Math.random()*18;
+      el.style.cssText=`left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${size}px;animation-duration:${1.5+Math.random()*3}s;animation-delay:${Math.random()*-3}s`;
+      overlay.appendChild(el);
+    }
+  }
+}
+
+function clearEffects(){
+  activeEffects.clear();
+  document.getElementById('fx-overlay').innerHTML='';
+  document.querySelectorAll('.fx-effect-btn').forEach(b=>b.classList.remove('active'));
+}
+
 </script>
 </body>
 </html>
