@@ -140,6 +140,34 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
   .style-grid{grid-template-columns:repeat(3,1fr)}
   .music-input-row{flex-direction:column}
 }
+
+/* ══ 신문 편집 ══ */
+#newspaper-modal{display:none;position:fixed;inset:0;background:#f5f0e8;z-index:9999;overflow-y:auto}
+#newspaper-modal.open{display:block}
+.np-toolbar{position:sticky;top:0;background:#1a1a1a;color:#fff;padding:10px 16px;display:flex;gap:8px;align-items:center;z-index:10;flex-wrap:wrap}
+.np-toolbar button{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:13px;font-weight:bold;font-family:inherit}
+.np-print-btn{background:#C9A84C;color:#1a1a1a}
+.np-close-btn{background:rgba(255,255,255,.15);color:#fff}
+.np-paper{max-width:800px;margin:20px auto;background:#fff;padding:24px;box-shadow:0 4px 20px rgba(0,0,0,.15);font-family:'맑은 고딕','Malgun Gothic',serif}
+.np-masthead{text-align:center;border-bottom:4px solid #1a1a1a;border-top:4px solid #1a1a1a;padding:12px 0;margin-bottom:16px}
+.np-name{font-size:36px;font-weight:900;letter-spacing:2px;color:#1a1a1a;font-family:'맑은 고딕',serif}
+.np-meta{font-size:11px;color:#555;margin-top:4px;display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #1a1a1a;border-bottom:1px solid #1a1a1a}
+.np-headline{font-size:22px;font-weight:900;text-align:center;margin:12px 0 8px;line-height:1.3;color:#1a1a1a}
+.np-grid{display:grid;gap:16px;margin-top:12px}
+.np-grid.col1{grid-template-columns:1fr}
+.np-grid.col2{grid-template-columns:1fr 1fr}
+.np-grid.col3{grid-template-columns:1fr 1fr 1fr}
+.np-article{break-inside:avoid}
+.np-article img{width:100%;border:1px solid #ddd;display:block}
+.np-caption{font-size:11px;color:#333;margin-top:6px;line-height:1.6;border-left:3px solid #C9A84C;padding-left:8px}
+.np-article-title{font-size:14px;font-weight:900;margin-bottom:4px;color:#1a1a1a}
+.np-input{width:100%;border:none;border-bottom:1px dashed #aaa;background:transparent;font-size:inherit;font-family:inherit;outline:none;color:#1a1a1a;padding:2px}
+@media print{
+  #newspaper-modal .np-toolbar{display:none!important}
+  #newspaper-modal{position:absolute}
+  .np-paper{box-shadow:none;margin:0;padding:16px}
+  body>*:not(#newspaper-modal){display:none!important}
+}
 </style>
 </head>
 <body>
@@ -289,6 +317,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text
           <button class="btn btn-primary" onclick="downloadImage()">⬇ 이미지 다운로드</button>
           <button class="btn btn-secondary" onclick="generateImage()">🔄 다시 생성</button>
           <button class="btn btn-secondary" onclick="addMore()">➕ 장면 추가</button>
+          <button class="btn btn-primary" onclick="printDirect()" style="background:#4CAF82;border-color:#4CAF82">🖨️ 바로 출력</button>
+          <button class="btn btn-primary" onclick="openNewspaper()" style="background:#C9A84C;border-color:#C9A84C;color:#1a1a1a">📰 신문으로 편집</button>
         </div>
       </div>
     </div>
@@ -615,6 +645,116 @@ function showToast(msg) {
   clearTimeout(t._timer);
   t._timer = setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+// ══════════════════════════
+// 📰 신문 편집 & 출력
+// ══════════════════════════
+let collectedItems = []; // {imageUrl, feeling, style}
+
+// 이미지 생성될 때마다 수집
+const _origGenImg = generateImage;
+
+function collectItem(imgUrl, feeling, style){
+  collectedItems.push({imageUrl: imgUrl, feeling: feeling||'', style: style||''});
+}
+
+function printDirect(){
+  if(!generatedImageUrl){ showToast('⚠️ 먼저 이미지를 생성해주세요'); return; }
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+    body{margin:0;padding:20px;font-family:'맑은 고딕',sans-serif;background:#fff}
+    img{max-width:100%;display:block;margin:0 auto 16px}
+    .feeling{font-size:14px;color:#333;line-height:1.8;padding:10px;border-left:3px solid #C9A84C}
+    @media print{body{padding:0}}
+  </style></head><body>
+    <img src="${generatedImageUrl}" />
+    <div class="feeling">${document.getElementById('feeling-input') ? document.getElementById('feeling-input').value : ''}</div>
+    <script>window.onload=()=>{window.print()}<\/script>
+  </body></html>`);
+  w.document.close();
+}
+
+function openNewspaper(){
+  if(!generatedImageUrl){ showToast('⚠️ 먼저 이미지를 생성해주세요'); return; }
+  
+  // 현재 항목 수집
+  const feeling = document.getElementById('feeling-input') ? document.getElementById('feeling-input').value : '';
+  const style = document.querySelector('.style-btn.active') ? document.querySelector('.style-btn.active').textContent : '';
+  if(!collectedItems.find(i=>i.imageUrl===generatedImageUrl)){
+    collectedItems.push({imageUrl: generatedImageUrl, feeling, style});
+  }
+  
+  // 날짜 자동
+  const now = new Date();
+  document.getElementById('np-date').value = now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일';
+  
+  // 그리드 채우기
+  buildNpGrid();
+  document.getElementById('newspaper-modal').classList.add('open');
+}
+
+function closeNewspaper(){
+  document.getElementById('newspaper-modal').classList.remove('open');
+}
+
+function buildNpGrid(){
+  const grid = document.getElementById('np-grid');
+  grid.innerHTML = '';
+  collectedItems.forEach((item, i) => {
+    const article = document.createElement('div');
+    article.className = 'np-article';
+    article.innerHTML = `
+      <input class="np-input np-article-title" value="장면 ${i+1} — ${item.style||'감상'}" style="font-size:14px;font-weight:900;margin-bottom:4px;width:100%">
+      <img src="${item.imageUrl}" alt="감상 이미지 ${i+1}">
+      <div class="np-caption">
+        <textarea style="width:100%;border:none;background:transparent;font-family:inherit;font-size:11px;resize:vertical;outline:none;color:#333;line-height:1.6" rows="3">${item.feeling}</textarea>
+      </div>
+    `;
+    grid.appendChild(article);
+  });
+  
+  // 항목 없으면 안내
+  if(collectedItems.length === 0){
+    grid.innerHTML = '<p style="text-align:center;color:#aaa;padding:40px">이미지를 생성하면 여기에 나타나요</p>';
+  }
+}
+
+function updateNpLayout(){
+  const val = document.getElementById('np-layout').value;
+  const grid = document.getElementById('np-grid');
+  grid.className = 'np-grid ' + val;
+}
+
+function printNewspaper(){
+  window.print();
+}
+
 </script>
+
+<!-- 신문 편집 모달 -->
+<div id="newspaper-modal">
+  <div class="np-toolbar">
+    <button class="np-close-btn" onclick="closeNewspaper()">✕ 닫기</button>
+    <span style="flex:1;font-size:14px;font-weight:bold">📰 음악 감상 신문 편집</span>
+    <select id="np-layout" onchange="updateNpLayout()" style="padding:6px;border-radius:6px;border:none;font-family:inherit;font-size:12px">
+      <option value="col1">1단 레이아웃</option>
+      <option value="col2" selected>2단 레이아웃</option>
+      <option value="col3">3단 레이아웃</option>
+    </select>
+    <button class="np-print-btn" onclick="printNewspaper()">🖨️ 인쇄 / PDF 저장</button>
+  </div>
+  <div class="np-paper" id="np-paper">
+    <div class="np-masthead">
+      <input class="np-input np-name" id="np-title" value="음악 감상 신문" style="font-size:36px;font-weight:900;letter-spacing:2px;text-align:center;width:100%">
+      <div class="np-meta">
+        <input class="np-input" id="np-school" placeholder="학교명" style="width:30%;font-size:11px">
+        <input class="np-input" id="np-date" style="width:30%;font-size:11px;text-align:center">
+        <input class="np-input" id="np-grade" placeholder="학년 반 이름" style="width:30%;font-size:11px;text-align:right">
+      </div>
+    </div>
+    <input class="np-input np-headline" id="np-headline" placeholder="신문 헤드라인을 입력하세요" style="font-size:22px;font-weight:900;text-align:center;width:100%;margin:12px 0 8px">
+    <div class="np-grid col2" id="np-grid"></div>
+  </div>
+</div>
 </body>
 </html>
