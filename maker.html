@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🎭 뮤지컬메이커 | EAIM</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;700&family=Cormorant+Garamond:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -152,6 +154,38 @@ const LS = {
   set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}}
 };
 const TEACHER_PW='mm_teacher_pw',TEACHER_API='mm_teacher_api',CLASS_ON='mm_class_on',WORKS_KEY='mm_works',SESSION='mm_session',DRAFT_KEY='mm_draft';
+
+// ══════════════════════════
+// 🔥 Firebase 설정 — index.html과 반드시 똑같은 값을 넣어주세요
+// (같은 프로젝트를 써야 결과물이 두 화면에서 같이 보여요)
+// ══════════════════════════
+const firebaseConfig = {
+  apiKey: "여기에_API_KEY",
+  authDomain: "여기에_PROJECT_ID.firebaseapp.com",
+  projectId: "여기에_PROJECT_ID",
+  storageBucket: "여기에_PROJECT_ID.appspot.com",
+  messagingSenderId: "여기에_SENDER_ID",
+  appId: "여기에_APP_ID"
+};
+let db = null, firebaseReady = false;
+try {
+  if (!firebaseConfig.apiKey.startsWith('여기에')) {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    firebaseReady = true;
+  }
+} catch(e) { console.error('Firebase 초기화 실패', e); }
+const WORKS_COL = () => db.collection('eaim_classroom').doc('state').collection('works');
+let unsubMakerWorks = null;
+function subscribeMakerWorks(){
+  if(!firebaseReady || unsubMakerWorks) return;
+  unsubMakerWorks = WORKS_COL().orderBy('createdAt','desc').onSnapshot(snap=>{
+    works = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    LS.set(WORKS_KEY, works);
+    if(session==='teacher') renderTeacher();
+  }, err=>console.warn('결과물 동기화 오류', err));
+}
+
 const BG_GENRES=['🏫 학교','🏠 가정','🌿 자연·환경','🏯 역사','🚀 우주·미래','🏙️ 도시','🌊 바다·섬','🧚 마법세계'];
 const MOOD_GENRES=['✨ 판타지','🤝 우정','🌱 성장','😄 코미디','🗺️ 모험','💛 사랑·가족','🔍 미스터리','💪 도전·극복'];
 const DURATIONS=[{id:2,label:'2막'},{id:3,label:'3막'},{id:4,label:'4막'},{id:5,label:'5막'}];
@@ -197,6 +231,7 @@ function doLogin(tab){
 }
 
 function renderTeacher(){
+  subscribeMakerWorks();
   root.innerHTML=`<div class="app-header"><div class="header-inner">
     <div style="display:flex;align-items:center;gap:12px;">
       <a href="index.html" style="font-size:.7rem;color:rgba(255,255,255,.25);text-decoration:none;padding:4px 8px;border:1px solid rgba(255,255,255,.1);border-radius:6px;">🏠 허브</a>
@@ -249,10 +284,10 @@ function renderDashContent(){
           <div class="w-meta">${w.student} · ${w.genre} · ${w.acts}막 · ${w.cast}명 · ${w.time}</div></div>
         </div>
         <div class="w-actions">
-          <button class="w-btn" onclick="toggleWPreview(${w.id})">👁 미리보기</button>
-          <button class="w-btn ${w.approved?'approve-on':''}" onclick="approveWork(${w.id})">✓ ${w.approved?'승인됨':'승인'}</button>
-          <button class="w-btn" onclick="downloadWork(${w.id})">📥 다운로드</button>
-          <button class="w-btn danger" onclick="deleteWork(${w.id})">삭제</button>
+          <button class="w-btn" onclick="toggleWPreview('${w.id}')">👁 미리보기</button>
+          <button class="w-btn ${w.approved?'approve-on':''}" onclick="approveWork('${w.id}')">✓ ${w.approved?'승인됨':'승인'}</button>
+          <button class="w-btn" onclick="downloadWork('${w.id}')">📥 다운로드</button>
+          <button class="w-btn danger" onclick="deleteWork('${w.id}')">삭제</button>
         </div>
         <div class="w-preview" id="wp-${w.id}">${w.preview||''}</div>
       </div>`).join('')}`;
@@ -269,11 +304,26 @@ function changePw(){
   setTimeout(()=>{err.textContent='';err.style.color='#fca5a5';},2500);
 }
 function toggleWPreview(id){const el=document.getElementById(`wp-${id}`);el.style.display=el.style.display==='block'?'none':'block';}
-function approveWork(id){works=works.map(w=>w.id===id?{...w,approved:!w.approved}:w);LS.set(WORKS_KEY,works);renderDashContent();}
-function deleteWork(id){if(!confirm('이 결과물을 삭제할까요?'))return;works=works.filter(w=>w.id!==id);LS.set(WORKS_KEY,works);renderDashContent();}
-function clearAllWorks(){if(!confirm('모든 결과물을 삭제할까요?'))return;works=[];LS.set(WORKS_KEY,works);renderDashContent();}
+function findWork(id){ return works.find(w=>String(w.id)===String(id)); }
+function approveWork(id){
+  const w=findWork(id); if(!w) return;
+  if(firebaseReady){ WORKS_COL().doc(String(id)).set({approved:!w.approved},{merge:true}).catch(e=>showToast('❌ 저장 실패: '+e.message)); }
+  else { works=works.map(x=>String(x.id)===String(id)?{...x,approved:!x.approved}:x);LS.set(WORKS_KEY,works);renderDashContent(); }
+}
+function deleteWork(id){
+  if(!confirm('이 결과물을 삭제할까요?'))return;
+  if(firebaseReady){ WORKS_COL().doc(String(id)).delete().catch(e=>showToast('❌ 삭제 실패: '+e.message)); }
+  else { works=works.filter(x=>String(x.id)!==String(id));LS.set(WORKS_KEY,works);renderDashContent(); }
+}
+async function clearAllWorks(){
+  if(!confirm('모든 결과물을 삭제할까요?'))return;
+  if(firebaseReady){
+    try{ const snap=await WORKS_COL().get(); const batch=db.batch(); snap.docs.forEach(d=>batch.delete(d.ref)); await batch.commit(); }
+    catch(e){ showToast('❌ 삭제 실패: '+e.message); }
+  } else { works=[];LS.set(WORKS_KEY,works);renderDashContent(); }
+}
 function downloadWork(id){
-  const w=works.find(x=>x.id===id);if(!w)return;
+  const w=findWork(id);if(!w)return;
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([w.fullText||w.preview],{type:'text/plain;charset=utf-8'}));
   a.download=`${w.title||'뮤지컬'}_${w.student}.txt`;a.click();
@@ -402,10 +452,16 @@ JSON만:{"songTitle":"커튼콜 제목(Reprise가능)","lyrics":"가사 4-6줄(�
 
 function saveWork(d){
   const fullText=buildFullText(d);
-  const work={id:Date.now(),student:studentName||'익명',title:d.title,genre:d.genre,acts:actCount,cast:castCount,
+  const newId = firebaseReady ? WORKS_COL().doc().id : String(Date.now());
+  const work={id:newId,student:studentName||'익명',title:d.title,genre:d.genre,acts:actCount,cast:castCount,
     time:new Date().toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),
     approved:false,preview:`${d.synopsis}\n\n♪ ${d.opening.songTitle}\n${d.opening.lyrics}`,fullText};
   works=[work,...works];LS.set(WORKS_KEY,works);
+  if(firebaseReady){
+    const {id, ...fields} = work;
+    WORKS_COL().doc(newId).set({...fields, createdAt:firebase.firestore.FieldValue.serverTimestamp()})
+      .catch(e=>showToast('❌ 결과물 클라우드 저장 실패: '+e.message));
+  }
 }
 
 function buildFullText(d){
@@ -478,7 +534,15 @@ function scheduleAutoSave(){
   autoSaveTimer=setTimeout(()=>{
     collectEdits();LS.set(DRAFT_KEY,generatedData);
     const last=works[0];
-    if(last){last.fullText=buildFullText(generatedData);last.preview=`${generatedData.synopsis}\n\n♪ ${generatedData.opening.songTitle}\n${generatedData.opening.lyrics}`;LS.set(WORKS_KEY,works);}
+    if(last){
+      last.fullText=buildFullText(generatedData);
+      last.preview=`${generatedData.synopsis}\n\n♪ ${generatedData.opening.songTitle}\n${generatedData.opening.lyrics}`;
+      LS.set(WORKS_KEY,works);
+      if(firebaseReady && last.id){
+        WORKS_COL().doc(String(last.id)).set({fullText:last.fullText, preview:last.preview},{merge:true})
+          .catch(e=>console.warn('자동저장 클라우드 반영 실패', e));
+      }
+    }
     showToast('💾 자동저장 완료');
   },1500);
 }
@@ -498,7 +562,6 @@ function downloadAll(){
   a.download=`${generatedData?.title||'뮤지컬'}_${studentName||'학생'}.txt`;a.click();
 }
 
-// ✅ 커튼콜 bgPrompt 추가됨
 function launchSlideshow(){
   collectEdits();const d=generatedData;if(!d)return;
   const scenes=[
