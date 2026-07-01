@@ -120,7 +120,6 @@ select.bubble-ctrl-btn{padding:5px 8px}
 #subtitle-bar{position:absolute;bottom:56px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.78);color:#fff;padding:10px 28px;border-radius:8px;font-size:clamp(14px,2.2vw,20px);font-weight:600;text-align:center;max-width:80%;z-index:30;text-shadow:0 2px 8px rgba(0,0,0,.8);display:none;letter-spacing:.5px;border:1px solid rgba(255,255,255,.12);cursor:pointer}
 #signal-indicator{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:600;padding:7px 18px;border-radius:24px;background:rgba(0,0,0,.8);backdrop-filter:blur(10px);border:1px solid rgba(105,240,174,.5);color:#69f0ae;font-size:11px;letter-spacing:2px;display:none;align-items:center;gap:8px;animation:signalPop .4s ease}
 
-/* ===== 캐릭터 패널 ===== */
 #char-panel{position:fixed;bottom:80px;right:16px;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:12px;display:none;z-index:200;width:230px}
 #char-panel.show{display:block}
 #char-panel h4{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:2px;margin-bottom:8px;text-transform:uppercase}
@@ -130,7 +129,6 @@ select.bubble-ctrl-btn{padding:5px 8px}
 .char-panel-btn.remove{background:rgba(255,82,82,.15);border-color:rgba(255,82,82,.4);color:#ff5252}
 .char-panel-btn.anim{background:rgba(255,213,79,.1);border-color:rgba(255,213,79,.3);color:#ffd54f}
 
-/* ===== 캐릭터 애니메이션 패널 ===== */
 #char-anim-panel{position:fixed;bottom:80px;right:260px;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:14px;display:none;z-index:200;width:220px}
 #char-anim-panel.show{display:block}
 #char-anim-panel h4{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:2px;margin-bottom:10px;text-transform:uppercase}
@@ -141,7 +139,6 @@ select.bubble-ctrl-btn{padding:5px 8px}
 .anim-btn:hover{background:rgba(255,255,255,.15);color:#fff}
 .anim-btn.active{background:rgba(93,173,226,.25);border-color:#5DADE2;color:#5DADE2}
 
-/* ===== 캐릭터 애니메이션 키프레임 ===== */
 @keyframes charSlideLeft{from{transform:translateX(-120%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes charSlideRight{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
 @keyframes charSlideUp{from{transform:translateY(120%);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -166,7 +163,6 @@ select.bubble-ctrl-btn{padding:5px 8px}
 .char-anim-exit-right{animation:charExitRight .5s ease forwards}
 .char-anim-fade-out{animation:charFadeOut .5s ease forwards}
 
-/* ===== 화면 녹화 ===== */
 #rec-indicator{position:fixed;top:16px;left:16px;z-index:600;display:none;align-items:center;gap:8px;background:rgba(0,0,0,.8);padding:6px 14px;border-radius:20px;border:1px solid rgba(255,82,82,.5);color:#ff5252;font-size:11px;letter-spacing:1px}
 #rec-indicator.show{display:flex}
 .rec-dot{width:8px;height:8px;border-radius:50%;background:#ff5252;animation:recBlink 1s ease-in-out infinite}
@@ -177,34 +173,27 @@ select.bubble-ctrl-btn{padding:5px 8px}
 @keyframes bubblePop{0%{transform:scale(.5);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
 @keyframes twinkle{from{opacity:.2}to{opacity:.8}}
 
-/* ══ 배경 효과 오버레이 ══ */
 #fx-overlay{position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden}
 #fx-panel{position:fixed;bottom:75px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.75);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:10px 16px;display:none;gap:8px;flex-wrap:wrap;justify-content:center;z-index:101}
 #fx-panel.open{display:flex}
 .fx-effect-btn{padding:6px 12px;border-radius:20px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;font-size:13px;cursor:pointer;transition:all .2s;font-family:inherit}
 .fx-effect-btn.active{border-color:var(--gold,#C9A84C);background:rgba(201,168,76,.25);color:#C9A84C}
 
-/* 안개 */
 @keyframes fogMove{0%{transform:translateX(-10%) translateY(0) scale(1.1)}50%{transform:translateX(5%) translateY(-3%) scale(1.15)}100%{transform:translateX(-10%) translateY(0) scale(1.1)}}
 .fog-particle{position:absolute;border-radius:50%;background:radial-gradient(ellipse,rgba(255,255,255,.18) 0%,transparent 70%);animation:fogMove linear infinite}
 
-/* 비 */
 @keyframes rainFall{0%{transform:translateY(-10px) translateX(0)}100%{transform:translateY(110vh) translateX(-30px)}}
 .rain-drop{position:absolute;width:1.5px;background:linear-gradient(transparent,rgba(174,214,241,.6));border-radius:1px;animation:rainFall linear infinite}
 
-/* 번개 */
 @keyframes lightning{0%,92%,100%{opacity:0}93%,96%{opacity:1}94%,97%{opacity:0}95%,98%{opacity:.8}}
 #lightning-overlay{position:absolute;inset:0;background:rgba(255,255,255,.85);animation:lightning 4s infinite;opacity:0}
 
-/* 빛 파티클 */
 @keyframes sparkle{0%{transform:translateY(0) scale(0);opacity:0}20%{opacity:1;transform:translateY(-20px) scale(1)}100%{transform:translateY(-80px) scale(0);opacity:0}}
 .light-particle{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(255,255,200,.9),rgba(255,200,50,.3));animation:sparkle ease-in-out infinite}
 
-/* 눈 */
 @keyframes snowFall{0%{transform:translateY(-10px) translateX(0) rotate(0)}100%{transform:translateY(110vh) translateX(40px) rotate(360deg)}}
 .snow-flake{position:absolute;color:rgba(255,255,255,.8);font-size:14px;animation:snowFall linear infinite}
 
-/* 별 */
 @keyframes starTwinkle{0%,100%{opacity:.2;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 .star-particle{position:absolute;color:#fff;animation:starTwinkle ease-in-out infinite}
 </style>
@@ -234,7 +223,6 @@ select.bubble-ctrl-btn{padding:5px 8px}
 <div id="rec-indicator"><div class="rec-dot"></div><span id="rec-text">녹화 중... 0:00</span></div>
 <div id="blackout"><div id="blackout-text"></div></div>
 
-<!-- 캐릭터 레이어 패널 -->
 <div id="char-panel">
   <h4>🎭 캐릭터 레이어</h4>
   <input id="char-url-input" placeholder="캐릭터 이미지 URL">
@@ -249,7 +237,6 @@ select.bubble-ctrl-btn{padding:5px 8px}
   <button class="char-panel-btn" onclick="toggleCharPanel()" style="background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.1);color:rgba(255,255,255,.3)">닫기</button>
 </div>
 
-<!-- 캐릭터 애니메이션 패널 -->
 <div id="char-anim-panel">
   <h4>🎬 캐릭터 애니메이션</h4>
   <div class="anim-section">
@@ -372,7 +359,6 @@ const SCENES = DATA.scenes || [];
 const TOTAL = SCENES.length;
 let current = 0, autoPlay = false, autoTimer = null;
 
-// ===== 2.5D 패럴랙스 =====
 let mouseX = 0, mouseY = 0, rafId = null;
 document.addEventListener('mousemove', e => {
   mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
@@ -407,7 +393,6 @@ setInterval(() => {
   }
 }, 30);
 
-// API 키
 let GEMINI_KEY = localStorage.getItem('mm_teacher_api') || localStorage.getItem('eaim_gemini_key') || '';
 const imgCache = {};
 function confirmApiKey() {
@@ -425,8 +410,7 @@ function updateStatusBadge(mode) {
 }
 async function fetchGeminiImage(prompt) {
   if (imgCache[prompt]) return imgCache[prompt];
-  // gemini-2.5-flash-image 모델 사용 (한국 지원)
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${GEMINI_KEY}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`;
   const res = await fetch(url, {method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({contents:[{parts:[{text:prompt+', 2.5D style, semi-3D illustration, cinematic, theatrical, dramatic lighting, 16:9'}]}],generationConfig:{responseModalities:['TEXT','IMAGE']}})});
   if (!res.ok) throw new Error('Gemini '+res.status);
@@ -443,7 +427,11 @@ function getPollinationsUrl(prompt, seed) {
 async function loadBgImage(scene, idx) {
   const el = document.getElementById(`scene-slide-${idx}`); if (!el) return;
   const spinner = document.getElementById(`bg-spinner-${idx}`);
-  if (scene.imageUrl && scene.imageUrl.startsWith('http')) { setImgSrc(idx, scene.imageUrl, '📌 URL'); return; }
+  // 미디어픽쳐에서 넘어온 이미지는 http(s) URL 또는 data: URL(AI 생성/손그림 스케치) 둘 다일 수 있어요
+  if (scene.imageUrl && (scene.imageUrl.startsWith('http') || scene.imageUrl.startsWith('data:'))) {
+    const label = scene.imageUrl.startsWith('data:') ? '🎨 이미지' : '📌 URL';
+    setImgSrc(idx, scene.imageUrl, label); return;
+  }
   if (!scene.imagePrompt) { if(spinner) spinner.style.display='none'; return; }
   if (GEMINI_KEY) {
     if(spinner) spinner.style.display='flex';
@@ -456,7 +444,6 @@ function setImgSrcWithFallback(idx, prompt) {
   const url = getPollinationsUrl(prompt);
   img.onload=()=>{ img.style.opacity='.45'; const b=document.getElementById(`src-badge-${idx}`); if(b){b.style.display='block';b.textContent='🟢 Pollinations';} };
   img.onerror=()=>{
-    // Pollinations 실패시 다른 seed로 재시도
     const url2 = getPollinationsUrl(prompt, Math.floor(Math.random()*99999));
     img.onerror=()=>{ img.style.display='none'; };
     img.src=url2;
@@ -470,7 +457,6 @@ function setImgSrc(idx,src,label) {
   img.src=src;
 }
 
-// ===== 캐릭터 레이어 =====
 function toggleCharPanel() {
   const panel = document.getElementById('char-panel');
   panel.classList.toggle('show');
@@ -497,7 +483,6 @@ function removeCharLayer() {
   showToast('🗑 캐릭터 제거됨');
 }
 
-// ===== 캐릭터 애니메이션 =====
 function toggleAnimPanel() {
   const panel = document.getElementById('char-anim-panel');
   panel.classList.toggle('show');
@@ -548,13 +533,11 @@ function stopLoopAnim() {
   currentLoopAnim = null; showToast('⏹ 상시 효과 중지');
 }
 
-// ===== 화면 녹화 =====
 let mediaRecorder = null, recChunks = [], recTimer = null, recSeconds = 0;
 async function toggleRecording() {
   const btn = document.getElementById('btn-rec');
   const indicator = document.getElementById('rec-indicator');
   if (mediaRecorder && mediaRecorder.state === 'recording') {
-    // 녹화 중지
     mediaRecorder.stop();
     clearInterval(recTimer);
     btn.textContent = '⏺';
@@ -562,7 +545,6 @@ async function toggleRecording() {
     indicator.classList.remove('show');
     showToast('⏹ 녹화 중지 — 저장 중...');
   } else {
-    // 녹화 시작
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: { mediaSource: 'screen', frameRate: 30 },
@@ -597,7 +579,6 @@ async function toggleRecording() {
   }
 }
 
-// 커버
 function buildCover() {
   const div=document.createElement('div'); div.id='cover-slide'; div.className='slide hidden';
   div.innerHTML=`
@@ -883,7 +864,6 @@ function editSubtitle(){
 }
 document.addEventListener('keydown',e=>{ if(e.target.id==='bubble-text-input'&&e.key==='Enter')addBubble(); });
 
-// 토스트
 function showToast(msg) {
   let t = document.getElementById('toast-msg');
   if (!t) {
@@ -911,9 +891,6 @@ window.addEventListener('load',()=>{
   initSlideshow();
 });
 
-// ══════════════════════════
-// 🎆 배경 효과
-// ══════════════════════════
 let activeEffects = new Set();
 
 function toggleFxPanel(){
@@ -923,15 +900,13 @@ function toggleFxPanel(){
 function toggleEffect(type){
   const overlay = document.getElementById('fx-overlay');
   const btn = document.querySelector(`.fx-effect-btn[onclick="toggleEffect('${type}')"]`);
-  
+
   if(activeEffects.has(type)){
-    // 끄기
     activeEffects.delete(type);
     btn.classList.remove('active');
     overlay.querySelectorAll('.fx-'+type).forEach(el=>el.remove());
     if(type==='lightning') overlay.querySelectorAll('#lightning-overlay').forEach(el=>el.remove());
   } else {
-    // 켜기
     activeEffects.add(type);
     btn.classList.add('active');
     createEffect(type, overlay);
@@ -1002,7 +977,6 @@ function clearEffects(){
   document.getElementById('fx-overlay').innerHTML='';
   document.querySelectorAll('.fx-effect-btn').forEach(b=>b.classList.remove('active'));
 }
-
 </script>
 </body>
 </html>
